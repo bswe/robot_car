@@ -79,12 +79,16 @@ ipcon=0
 
 def video_show():
     while True:
-        frame = footage_socket.recv_string()
+        try:
+            frame = footage_socket.recv_string()
+        except Exception:
+            print ("got socket exception in video_show thread, will terminate thread")
+            exit()
         img = base64.b64decode(frame)
         npimg = np.frombuffer(img, dtype=np.uint8)
         source = cv2.imdecode(npimg, 1)
         cv2.imshow("Stream", source)
-        cv2.waitKey(25)                
+        cv2.waitKey(1)                
 
 
 def call_forward(event):         #When this function is called,client commands the car to move forward
@@ -360,13 +364,13 @@ def socket_connect():     #Call this function to connect with the robot server
                 ip_stu=0                         #'0' means connected
             
                 at=thread.Thread(target=code_receive) #Define a thread for data receiving
-                at.setDaemon(True)                    #'True' means it is a front thread,it would close when the mainloop() closes
+                at.setDaemon(True)                    #'True' means it is a front thread, it would close when the mainloop() closes
                 at.start()                            #Thread starts
 
                 video_thread=thread.Thread(target=video_show) #Define a thread for data receiving
-                video_thread.setDaemon(True)                    #'True' means it is a front thread,it would close when the mainloop() closes
+                video_thread.setDaemon(True)                  #'True' means it is a front thread,it would close when the mainloop() closes
                 print('Video Connected')
-                video_thread.start()                            #Thread starts
+                video_thread.start()                          #Thread starts
 
                 ipaddr=tcpClicSock.getsockname()[0]
                 break
@@ -388,7 +392,11 @@ def code_receive():     #A function for data receiving
     global led_status, ipcon, findline_status, auto_status, opencv_status, speech_status
     
     while True:
-        code_car = tcpClicSock.recv(BUFFER_SIZE) #Listening,and save the data in 'code_car'
+        try:
+            code_car = tcpClicSock.recv(BUFFER_SIZE) #Listening,and save the data in 'code_car'
+        except Exception:
+            print ("got socket exception in code _receive thread, will terminate thread")
+            exit()
         l_ip.config(text=code_car)          #Put the data on the label
         #print(code_car)
         if not code_car:
@@ -767,10 +775,15 @@ if __name__ == '__main__':
     footage_socket.setsockopt_string(zmq.SUBSCRIBE, np.unicode(''))
 
     init()             # Load GUI
-    window.mainloop()  # Run the mainloop()
+    window.mainloop()  # Run the window event processing loop
 
     if ip_stu == 0:
         print ("closing WIFI connection to robot")
         tcpClicSock.close()          # Close socket or it may not connect with the server again
+
     print ("destroying FPV window")
+    # kill the zmq context to cause an exception to be raised in video thread so that
+    # it quits and allows the destroyAllWindows to close the FPV window reliably
+    context.destroy()
     cv2.destroyAllWindows()
+    print ("exiting robot client")
