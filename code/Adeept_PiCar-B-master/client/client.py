@@ -159,7 +159,6 @@ def call_look_down(event):               #Camera look down
 
 def call_ahead(event):                   #Camera look ahead
     tcpClicSock.send(('ahead').encode())
-    print('ahead')
 
 
 def call_auto(event):            #When this function is called,client commands the car to start auto mode
@@ -179,7 +178,6 @@ def call_Stop(event):            #When this function is called,client commands t
 
 def scan(event):                 #When this function is called,client commands the ultrasonic to scan
     tcpClicSock.send(('scan').encode())
-    print('scan')
 
 
 def find_line(event):            #Line follow mode
@@ -189,7 +187,7 @@ def find_line(event):            #Line follow mode
         tcpClicSock.send(('Stop').encode())
 
 
-def replace_num(initial,new_num):   #Call this function to replace data in '.txt' file
+def replace_num(initial, new_num):   #Call this function to replace data in '.txt' file
     newline=""
     str_num=str(new_num)
     with open("ip.txt","r") as f:
@@ -197,7 +195,7 @@ def replace_num(initial,new_num):   #Call this function to replace data in '.txt
             if(line.find(initial) == 0):
                 line = initial+"%s" %(str_num)
             newline += line
-    with open("ip.txt","w") as f:
+    with open("ip.txt", "w") as f:
         f.writelines(newline)    #Call this function to replace data in '.txt' file
 
 
@@ -237,31 +235,31 @@ def voice_input():
     r = sr.Recognizer()
     with sr.Microphone() as source:
         #r.adjust_for_ambient_noise(source)
-        r.record(source,duration=2)
+        r.record(source, duration=2)
         print("Say something!")
         audio = r.listen(source)
     try:
-        a2t=r.recognize_sphinx(audio,keyword_entries=[('forward',1.0),
-                                                      ('backward',1.0),
-                                                      ('left',1.0),
-                                                      ('right',1.0),
-                                                      ('stop',1.0),
-                                                      ('find line',0.95),
-                                                      ('follow',1),
-                                                      ('lights on',1),
-                                                      ('lights off',1)])
+        a2t=r.recognize_sphinx(audio, keyword_entries=[('forward', 1.0),
+                                                       ('backward', 1.0),
+                                                       ('left', 1.0),
+                                                       ('right', 1.0),
+                                                       ('stop', 1.0),
+                                                       ('find line', 0.95),
+                                                       ('follow', 1),
+                                                       ('lights on', 1),
+                                                       ('lights off', 1)])
         print("Sphinx thinks you said " + a2t)
     except sr.UnknownValueError:
         print("Sphinx could not understand audio")
     except sr.RequestError as e:
         print("Sphinx error; {0}".format(e))
-    BtnVIN.config(fg=TEXT_COLOR,bg=BUTTON_COLOR)
+    BtnVIN.config(fg=TEXT_COLOR, bg=BUTTON_COLOR)
     return a2t
 
 
 def voice_command(event):
     l_VIN.config(text='Command?')
-    BtnVIN.config(fg='#0277BD',bg='#BBDEFB')
+    BtnVIN.config(fg='#0277BD', bg='#BBDEFB')
     v_command=voice_input()
     l_VIN.config(text='%s'%v_command)
     if 'forward' in v_command:
@@ -333,57 +331,54 @@ def connect_2():          #Call this function to connect with the server
 def socket_connect():     #Call this function to connect with the robot server
     global tcpClicSock, ip_stu, ipaddr, ip_entry
     
-    ip_adr=ip_entry.get()       #Get the IP address from Entry
+    ip_adr=ip_entry.get()    #Get the IP address from Entry
 
-    if ip_adr == '':      #If no input IP address in Entry,import a default IP
+    if ip_adr == '':         #If no input IP address in Entry, import a default IP
         ip_adr=num_import('IP:')
         l_ip_4.config(text='Connecting')
         l_ip_4.config(bg='#FF8F00')
         l_ip_5.config(text='Default:%s'%ip_adr)
         pass
     
-    tcpClicSock = socket(AF_INET, SOCK_STREAM) #Set connection value for socket
-
-    for i in range (1,6): #Try 5 times if disconnected
+    for i in range (1,6): # Retry 5 additional times if connection fails
         try:
-            if ip_stu == 1:
-                print("Connecting to server @ %s:%d..." %(ip_adr, SERVER_PORT))
-                address = (ip_adr, SERVER_PORT)
-                tcpClicSock.connect(address)        #Connection with the server
-            
-                print("Connected")
-            
-                l_ip_5.config(text='IP:%s'%ip_adr)
-                l_ip_4.config(text='Connected')
-                l_ip_4.config(bg='#558B2F')
+            print("Connecting to server @ %s:%d..." %(ip_adr, SERVER_PORT))
+            address = (ip_adr, SERVER_PORT)
+            tcpClicSock = socket(AF_INET, SOCK_STREAM) #Set connection value for socket
+            tcpClicSock.connect(address)               #Connection with the server
+        
+            print("robot Connected")
+        
+            l_ip_5.config(text='IP:%s'%ip_adr)
+            l_ip_4.config(text='Connected')
+            l_ip_4.config(bg='#558B2F')
 
-                replace_num('IP:',ip_adr)
-                ip_entry.config(state='disabled')      #Disable the Entry
-                Btn14.config(state='disabled')   #Disable the Entry
-            
-                ip_stu=0                         #'0' means connected
-            
-                at=thread.Thread(target=code_receive) #Define a thread for data receiving
-                at.setDaemon(True)                    #'True' means it is a front thread, it would close when the mainloop() closes
-                at.start()                            #Thread starts
+            replace_num('IP:',ip_adr)
+            ip_entry.config(state='disabled')     #Disable the Entry
+            Btn14.config(state='disabled')        #Disable the Entry
+                    
+            at=thread.Thread(target=code_receive) #Define a thread for data receiving
+            at.setDaemon(True)                    #'True' means it is a front thread, it would close when the mainloop() closes
+            at.start()                            #Thread starts
 
-                video_thread=thread.Thread(target=video_show) #Define a thread for data receiving
-                video_thread.setDaemon(True)                  #'True' means it is a front thread,it would close when the mainloop() closes
-                print('Video Connected')
-                video_thread.start()                          #Thread starts
+            video_thread=thread.Thread(target=video_show) #Define a thread for data receiving
+            video_thread.setDaemon(True)                  #'True' means it is a front thread,it would close when the mainloop() closes
+            print('Video Connected')
+            video_thread.start()                          #Thread starts
 
-                ipaddr=tcpClicSock.getsockname()[0]
-                break
-            else:
-                break
+            ipaddr=tcpClicSock.getsockname()[0]
+            break
+
         except Exception:
-            print("Cannot connect to server!")
-            print('Try %d/5 time(s)'%i)
-            l_ip_4.config(text='Try %d/5 time(s)'%i)
+            print("Failed to connect to server!")
+            print('Retrying %d/5 time(s)'%i)
+            l_ip_4.config(text='Retrying %d/5 time(s)'%i)
             l_ip_4.config(bg='#EF6C00')
+            tcpClicSock = None
             time.sleep(1)
             continue
-    if ip_stu == 1:
+
+    if tcpClicSock == None:
         l_ip_4.config(text='Disconnected')
         l_ip_4.config(bg='#F44336')
 
@@ -398,20 +393,19 @@ def code_receive():     #A function for data receiving
             print ("got socket exception in code _receive thread, will terminate thread")
             exit()
         l_ip.config(text=code_car)          #Put the data on the label
-        #print(code_car)
+        print("recvd from robot: " + str(code_car))
         if not code_car:
             continue
         elif 'SET' in str(code_car):
-            print('set get')
             set_list=code_car.decode()
             set_list=set_list.split()
             s1,s2,s3,s4,s5,s6=set_list[1:]
-            E_C1.delete(0,50)
-            E_C2.delete(0,50)
-            E_M1.delete(0,50)
-            E_M2.delete(0,50)
-            E_T1.delete(0,50)
-            E_T2.delete(0,50)
+            E_C1.delete(0, 50)
+            E_C2.delete(0, 50)
+            E_M1.delete(0, 50)
+            E_M2.delete(0, 50)
+            E_T1.delete(0, 50)
+            E_T2.delete(0, 50)
 
             E_C1.insert ( 0, '%d'%int(s1) ) 
             E_C2.insert ( 0, '%d'%int(s2) ) 
@@ -445,14 +439,14 @@ def code_receive():     #A function for data receiving
             dis_list=f_list
             #can_scan.delete(line)
             #can_scan.delete(point_scan)
-            can_scan_1 = tk.Canvas(window,bg=CANVAS_COLOR,height=250,width=320,highlightthickness=0) #define a canvas
+            can_scan_1 = tk.Canvas(window, bg=CANVAS_COLOR, height=250, width=320, highlightthickness=0) #define a canvas
             can_scan_1.place(x=440,y=330) #Place the canvas
-            line = can_scan_1.create_line(0,62,320,62,fill='darkgray')   #Draw a line on canvas
-            line = can_scan_1.create_line(0,124,320,124,fill='darkgray') #Draw a line on canvas
-            line = can_scan_1.create_line(0,186,320,186,fill='darkgray') #Draw a line on canvas
-            line = can_scan_1.create_line(160,0,160,250,fill='darkgray') #Draw a line on canvas
-            line = can_scan_1.create_line(80,0,80,250,fill='darkgray')   #Draw a line on canvas
-            line = can_scan_1.create_line(240,0,240,250,fill='darkgray') #Draw a line on canvas
+            line = can_scan_1.create_line(0, 62, 320, 62, fill='darkgray')   #Draw a line on canvas
+            line = can_scan_1.create_line(0, 124, 320, 124, fill='darkgray') #Draw a line on canvas
+            line = can_scan_1.create_line(0, 186, 320, 186, fill='darkgray') #Draw a line on canvas
+            line = can_scan_1.create_line(160, 0, 160, 250, fill='darkgray') #Draw a line on canvas
+            line = can_scan_1.create_line(80, 0, 80, 250, fill='darkgray')   #Draw a line on canvas
+            line = can_scan_1.create_line(240, 0, 240, 250, fill='darkgray') #Draw a line on canvas
 
             x_range = var_x_scan.get()          #Get the value of scan range from IntVar
 
@@ -463,8 +457,8 @@ def code_receive():     #A function for data receiving
                     pos_ra  = int(((i/len(dis_list))*140)+20)                           #Scale the direction range to (20-160)
                     len_dis = int(len_dis_1*(math.sin(math.radians(pos_ra))))           #len_dis is the height of the line
 
-                    x0_l,y0_l,x1_l,y1_l=pos,(250-len_dis),pos,(250-len_dis)             #The position of line
-                    x0,y0,x1,y1=(pos+3),(250-len_dis+3),(pos-3),(250-len_dis-3)         #The position of arc
+                    x0_l, y0_l, x1_l, y1_l = pos, (250-len_dis), pos, (250-len_dis)       #The position of line
+                    x0, y0, x1, y1 = (pos+3), (250-len_dis+3), (pos-3), (250-len_dis-3)         #The position of arc
 
                     if pos <= 160:                                                      #Scale the whole picture to a shape of sector
                         pos = 160-abs(int(len_dis_1*(math.cos(math.radians(pos_ra)))))
@@ -475,13 +469,13 @@ def code_receive():     #A function for data receiving
 
                     y1_l = y1_l-abs(math.sin(math.radians(pos_ra))*130)              #Orientation of line
 
-                    line = can_scan_1.create_line(pos,y0_l,x1_l,y1_l,fill=color_line)   #Draw a line on canvas
-                    point_scan = can_scan_1.create_oval((pos+3),y0,(pos-3),y1,fill=color_oval,outline=color_oval) #Draw a arc on canvas
+                    line = can_scan_1.create_line(pos, y0_l, x1_l, y1_l, fill=color_line)   #Draw a line on canvas
+                    point_scan = can_scan_1.create_oval((pos+3), y0, (pos-3), y1, fill=color_oval, outline=color_oval) #Draw a arc on canvas
                 except:
                     pass
-            can_tex_11=can_scan_1.create_text((27,178),text='%sm'%round((x_range/4),2),fill='#aeea00')     #Create a text on canvas
-            can_tex_12=can_scan_1.create_text((27,116),text='%sm'%round((x_range/2),2),fill='#aeea00')     #Create a text on canvas
-            can_tex_13=can_scan_1.create_text((27,54),text='%sm'%round((x_range*0.75),2),fill='#aeea00')  #Create a text on canvas
+            can_tex_11=can_scan_1.create_text((27,178), text='%sm'%round((x_range/4),2), fill='#aeea00')     #Create a text on canvas
+            can_tex_12=can_scan_1.create_text((27,116), text='%sm'%round((x_range/2),2), fill='#aeea00')     #Create a text on canvas
+            can_tex_13=can_scan_1.create_text((27,54), text='%sm'%round((x_range*0.75),2), fill='#aeea00')   #Create a text on canvas
 
         elif '1' in str(code_car):               #Translate the code to text
             l_ip.config(text='Moving Forward')   #Put the text on the label
@@ -504,42 +498,42 @@ def code_receive():     #A function for data receiving
         
         elif '0' in str(code_car):               #Translate the code to text
             l_ip.config(text='Follow Mode On')     #Put the text on the label
-            Btn5.config(text='Following',fg='#0277BD',bg='#BBDEFB')
+            Btn5.config(text='Following', fg='#0277BD', bg='#BBDEFB')
             auto_status = 1
         
         elif 'findline' in str(code_car):        #Translate the code to text
-            BtnFL.config(text='Finding',fg='#0277BD',bg='#BBDEFB')
+            BtnFL.config(text='Finding', fg='#0277BD', bg='#BBDEFB')
             l_ip.config(text='Find Line') 
             findline_status = 1
         
         elif 'lightsON' in str(code_car):        #Translate the code to text
-            BtnLED.config(text='Lights ON',fg='#0277BD',bg='#BBDEFB')
+            BtnLED.config(text='Lights ON', fg='#0277BD', bg='#BBDEFB')
             led_status=1
             l_ip.config(text='Lights On')        #Put the text on the label
         
         elif 'lightsOFF' in str(code_car):        #Translate the code to text
-            BtnLED.config(text='Lights OFF',fg=TEXT_COLOR,bg=BUTTON_COLOR)
+            BtnLED.config(text='Lights OFF', fg=TEXT_COLOR, bg=BUTTON_COLOR)
             led_status=0
             l_ip.config(text='Lights OFF')        #Put the text on the label
 
         elif 'oncvon' in str(code_car):
-            BtnOCV.config(text='OpenCV ON',fg='#0277BD',bg='#BBDEFB')
-            BtnFL.config(text='Find Line',fg=TEXT_COLOR,bg=BUTTON_COLOR)
+            BtnOCV.config(text='OpenCV ON', fg='#0277BD', bg='#BBDEFB')
+            BtnFL.config(text='Find Line', fg=TEXT_COLOR, bg=BUTTON_COLOR)
             l_ip.config(text='OpenCV ON')
             opencv_status = 1
 
         elif 'auto_status_off' in str(code_car):
-            BtnSR3.config(fg=TEXT_COLOR,bg=BUTTON_COLOR,state='normal')
-            BtnOCV.config(text='OpenCV',fg=TEXT_COLOR,bg=BUTTON_COLOR,state='normal')
-            BtnFL.config(text='Find Line',fg=TEXT_COLOR,bg=BUTTON_COLOR)
-            Btn5.config(text='Follow',fg=TEXT_COLOR,bg=BUTTON_COLOR,state='normal')
+            BtnSR3.config(fg=TEXT_COLOR, bg=BUTTON_COLOR, state='normal')
+            BtnOCV.config(text='OpenCV', fg=TEXT_COLOR, bg=BUTTON_COLOR, state='normal')
+            BtnFL.config(text='Find Line', fg=TEXT_COLOR, bg=BUTTON_COLOR)
+            Btn5.config(text='Follow', fg=TEXT_COLOR, bg=BUTTON_COLOR, state='normal')
             findline_status = 0
             speech_status   = 0
             opencv_status   = 0
             auto_status     = 0
 
         elif 'voice_3' in str(code_car):
-            BtnSR3.config(fg='#0277BD',bg='#BBDEFB')
+            BtnSR3.config(fg='#0277BD', bg='#BBDEFB')
             BtnSR1.config(state='disabled')
             BtnSR2.config(state='disabled')
             l_ip.config(text='Sphinx SR')        #Put the text on the label
@@ -561,51 +555,51 @@ def init():
     var_x_scan.set(2)         #Set a default scan value
 
     logo =tk.PhotoImage(file = 'logo.png')         #Define the picture of logo,but only supports '.png' and '.gif'
-    l_logo=tk.Label(window,image=logo,bg=BACKGROUND_COLOR) #Set a label to show the logo picture
+    l_logo=tk.Label(window, image=logo, bg=BACKGROUND_COLOR) #Set a label to show the logo picture
     l_logo.photo = logo
     l_logo.place(x=30,y=13)                        #Place the Label in a right position
 
-    BtnC1 = tk.Button(window, width=15, text='Camera Middle',fg=TEXT_COLOR,bg=BUTTON_COLOR,relief='ridge')
+    BtnC1 = tk.Button(window, width=15, text='Camera Middle', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnC1.place(x=785,y=10)
-    E_C1 = tk.Entry(window,show=None,width=16,bg="#37474F",fg='#eceff1',exportselection=0,justify='center')
+    E_C1 = tk.Entry(window, show=None, width=16, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
     E_C1.place(x=785,y=45)                             #Define a Entry and put it in position
 
-    BtnC2 = tk.Button(window, width=15, text='Ultrasonic Middle',fg=TEXT_COLOR,bg=BUTTON_COLOR,relief='ridge')
+    BtnC2 = tk.Button(window, width=15, text='Ultrasonic Middle', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnC2.place(x=785,y=100)
-    E_C2 = tk.Entry(window,show=None,width=16,bg="#37474F",fg='#eceff1',exportselection=0,justify='center')
+    E_C2 = tk.Entry(window, show=None, width=16, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
     E_C2.place(x=785,y=135)                             #Define a Entry and put it in position
 
-    BtnM1 = tk.Button(window, width=15, text='Motor A Speed',fg=TEXT_COLOR,bg=BUTTON_COLOR,relief='ridge')
+    BtnM1 = tk.Button(window, width=15, text='Motor A Speed', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnM1.place(x=785,y=190)
-    E_M1 = tk.Entry(window,show=None,width=16,bg="#37474F",fg='#eceff1',exportselection=0,justify='center')
-    E_M1.place(x=785,y=225)                             #Define a Entry and put it in position
+    E_M1 = tk.Entry(window, show=None, width=16, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
+    E_M1.place(x=785, y=225)                             #Define a Entry and put it in position
 
-    BtnM2 = tk.Button(window, width=15, text='Motor B Speed',fg=TEXT_COLOR,bg=BUTTON_COLOR,relief='ridge')
-    BtnM2.place(x=785,y=280)
-    E_M2 = tk.Entry(window,show=None,width=16,bg="#37474F",fg='#eceff1',exportselection=0,justify='center')
-    E_M2.place(x=785,y=315)                             #Define a Entry and put it in position
+    BtnM2 = tk.Button(window, width=15, text='Motor B Speed', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnM2.place(x=785 ,y=280)
+    E_M2 = tk.Entry(window, show=None, width=16, bg="#37474F",fg='#eceff1', exportselection=0, justify='center')
+    E_M2.place(x=785, y=315)                             #Define a Entry and put it in position
 
-    BtnT1 = tk.Button(window, width=15, text='Look Up Max',fg=TEXT_COLOR,bg=BUTTON_COLOR,relief='ridge')
-    BtnT1.place(x=785,y=370)
-    E_T1 = tk.Entry(window,show=None,width=16,bg="#37474F",fg='#eceff1',exportselection=0,justify='center')
-    E_T1.place(x=785,y=405)                             #Define a Entry and put it in position
+    BtnT1 = tk.Button(window, width=15, text='Look Up Max', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnT1.place(x=785, y=370)
+    E_T1 = tk.Entry(window, show=None, width=16, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
+    E_T1.place(x=785, y=405)                             #Define a Entry and put it in position
 
-    BtnT2 = tk.Button(window, width=15, text='Look Down Max',fg=TEXT_COLOR,bg=BUTTON_COLOR,relief='ridge')
-    BtnT2.place(x=785,y=460)
-    E_T2 = tk.Entry(window,show=None,width=16,bg="#37474F",fg='#eceff1',exportselection=0,justify='center')
-    E_T2.place(x=785,y=495)                             #Define a Entry and put it in position
+    BtnT2 = tk.Button(window, width=15, text='Look Down Max', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnT2.place(x=785, y=460)
+    E_T2 = tk.Entry(window, show=None, width=16, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
+    E_T2.place(x=785, y=495)                             #Define a Entry and put it in position
 
-    BtnLED = tk.Button(window, width=15, text='Lights ON',fg=TEXT_COLOR,bg=BUTTON_COLOR,relief='ridge')
-    BtnLED.place(x=300,y=420)
+    BtnLED = tk.Button(window, width=15, text='Lights ON', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnLED.place(x=300, y=420)
 
-    BtnOCV = tk.Button(window, width=15, text='OpenCV',fg=TEXT_COLOR,bg=BUTTON_COLOR,relief='ridge',command=call_opencv)
-    BtnOCV.place(x=30,y=420)
+    BtnOCV = tk.Button(window, width=15, text='OpenCV', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge', command=call_opencv)
+    BtnOCV.place(x=30, y=420)
 
-    BtnFL = tk.Button(window, width=15, text='Find Line',fg=TEXT_COLOR,bg=BUTTON_COLOR,relief='ridge')
-    BtnFL.place(x=165,y=420)
+    BtnFL = tk.Button(window, width=15, text='Find Line', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnFL.place(x=165, y=420)
 
-    BtnSR3 = tk.Button(window, width=15, text='Sphinx SR',fg=TEXT_COLOR,bg=BUTTON_COLOR,relief='ridge',command=call_SR3)
-    BtnSR3.place(x=300,y=495)
+    BtnSR3 = tk.Button(window, width=15, text='Sphinx SR', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge', command=call_SR3)
+    BtnSR3.place(x=300, y=495)
 
     E_C1.insert ( 0, 'Default:425' ) 
     E_C2.insert ( 0, 'Default:425' ) 
@@ -614,94 +608,94 @@ def init():
     E_T1.insert ( 0, 'Default:662' ) 
     E_T2.insert ( 0, 'Default:295' )
 
-    can_scan = tk.Canvas(window,bg=CANVAS_COLOR,height=250,width=320,highlightthickness=0) #define a canvas
-    can_scan.place(x=440,y=330) #Place the canvas
-    line = can_scan.create_line(0,62,320,62,fill='darkgray')   #Draw a line on canvas
-    line = can_scan.create_line(0,124,320,124,fill='darkgray') #Draw a line on canvas
-    line = can_scan.create_line(0,186,320,186,fill='darkgray') #Draw a line on canvas
-    line = can_scan.create_line(160,0,160,250,fill='darkgray') #Draw a line on canvas
-    line = can_scan.create_line(80,0,80,250,fill='darkgray')   #Draw a line on canvas
-    line = can_scan.create_line(240,0,240,250,fill='darkgray') #Draw a line on canvas
+    can_scan = tk.Canvas(window, bg=CANVAS_COLOR, height=250, width=320, highlightthickness=0) #define a canvas
+    can_scan.place(x=440, y=330) #Place the canvas
+    line = can_scan.create_line(0, 62, 320, 62, fill='darkgray')   #Draw a line on canvas
+    line = can_scan.create_line(0, 124, 320, 124, fill='darkgray') #Draw a line on canvas
+    line = can_scan.create_line(0, 186, 320, 186, fill='darkgray') #Draw a line on canvas
+    line = can_scan.create_line(160, 0, 160, 250, fill='darkgray') #Draw a line on canvas
+    line = can_scan.create_line(80, 0, 80, 250, fill='darkgray')   #Draw a line on canvas
+    line = can_scan.create_line(240, 0, 240, 250, fill='darkgray') #Draw a line on canvas
     x_range = var_x_scan.get()
-    can_tex_11=can_scan.create_text((27,178),text='%sm'%round((x_range/4),2),fill='#aeea00')     #Create a text on canvas
-    can_tex_12=can_scan.create_text((27,116),text='%sm'%round((x_range/2),2),fill='#aeea00')     #Create a text on canvas
-    can_tex_13=can_scan.create_text((27,54),text='%sm'%round((x_range*0.75),2),fill='#aeea00')  #Create a text on canvas
+    can_tex_11=can_scan.create_text((27, 178), text='%sm'%round((x_range/4),2), fill='#aeea00')     #Create a text on canvas
+    can_tex_12=can_scan.create_text((27,116), text='%sm'%round((x_range/2),2), fill='#aeea00')     #Create a text on canvas
+    can_tex_13=can_scan.create_text((27,54), text='%sm'%round((x_range*0.75),2), fill='#aeea00')  #Create a text on canvas
 
-    s1 = tk.Scale(window,label="               < Slow   Speed Adjustment   Fast >",
-    from_=0.4,to=1,orient=tk.HORIZONTAL,length=400,
-    showvalue=0.1,tickinterval=0.1,resolution=0.2,variable=var_spd,fg=TEXT_COLOR,bg=BACKGROUND_COLOR,highlightthickness=0)
-    s1.place(x=200,y=100)                            #Define a Scale and put it in position
+    s1 = tk.Scale(window, label="               < Slow   Speed Adjustment   Fast >",
+    from_=0.4, to=1, orient=tk.HORIZONTAL, length=400,
+    showvalue=0.1, tickinterval=0.1, resolution=0.2, variable=var_spd, fg=TEXT_COLOR, bg=BACKGROUND_COLOR, highlightthickness=0)
+    s1.place(x=200, y=100)                            #Define a Scale and put it in position
 
-    s3 = tk.Scale(window,label="< Near   Scan Range Adjustment(Meter(s))   Far >",
-    from_=1,to=5,orient=tk.HORIZONTAL,length=300,
-    showvalue=1,tickinterval=1,resolution=1,variable=var_x_scan,fg=TEXT_COLOR,bg=BACKGROUND_COLOR,highlightthickness=0)
-    s3.place(x=30,y=320)    
+    s3 = tk.Scale(window, label="< Near   Scan Range Adjustment(Meter(s))   Far >",
+    from_=1, to=5, orient=tk.HORIZONTAL, length=300,
+    showvalue=1, tickinterval=1, resolution=1, variable=var_x_scan, fg=TEXT_COLOR, bg=BACKGROUND_COLOR, highlightthickness=0)
+    s3.place(x=30, y=320)    
 
-    l_ip=tk.Label(window,width=18,text='Status',fg=TEXT_COLOR,bg=BUTTON_COLOR)
-    l_ip.place(x=30,y=110)                           #Define a Label and put it in position
+    l_ip=tk.Label(window, width=18, text='Status', fg=TEXT_COLOR, bg=BUTTON_COLOR)
+    l_ip.place(x=30, y=110)                           #Define a Label and put it in position
 
-    l_ip_2=tk.Label(window,width=18,text='Speed:%s'%(var_spd.get()),fg=TEXT_COLOR,bg=BUTTON_COLOR)
-    l_ip_2.place(x=30,y=145)                         #Define a Label and put it in position
+    l_ip_2=tk.Label(window, width=18, text='Speed:%s'%(var_spd.get()), fg=TEXT_COLOR, bg=BUTTON_COLOR)
+    l_ip_2.place(x=30, y=145)                         #Define a Label and put it in position
 
-    l_ip_4=tk.Label(window,width=18,text='Disconnected',fg=TEXT_COLOR,bg='#F44336')
-    l_ip_4.place(x=637,y=110)                         #Define a Label and put it in position
+    l_ip_4=tk.Label(window, width=18, text='Disconnected', fg=TEXT_COLOR, bg='#F44336')
+    l_ip_4.place(x=637, y=110)                         #Define a Label and put it in position
 
-    l_ip_5=tk.Label(window,width=18,text='Use default IP',fg=TEXT_COLOR,bg=BUTTON_COLOR)
-    l_ip_5.place(x=637,y=145)                         #Define a Label and put it in position
+    l_ip_5=tk.Label(window, width=18, text='Use default IP', fg=TEXT_COLOR, bg=BUTTON_COLOR)
+    l_ip_5.place(x=637, y=145)                         #Define a Label and put it in position
 
-    l_inter=tk.Label(window,width=45,text='< Car Adjustment              Camera Adjustment>\nW:Move Forward                 Look Up:I\nS:Move Backward            Look Down:K\nA:Turn Left                          Turn Left:J\nD:Turn Right                      Turn Right:L\nZ:Auto Mode On          Look Forward:H\nC:Auto Mode Off      Ultrasdonic Scan:X' ,
-    fg='#212121',bg='#90a4ae')
-    l_inter.place(x=240,y=180)                       #Define a Label and put it in position
+    l_inter=tk.Label(window, width=45, text='< Car Adjustment              Camera Adjustment>\nW:Move Forward                 Look Up:I\nS:Move Backward            Look Down:K\nA:Turn Left                          Turn Left:J\nD:Turn Right                      Turn Right:L\nZ:Auto Mode On          Look Forward:H\nC:Auto Mode Off      Ultrasdonic Scan:X' ,
+    fg='#212121', bg='#90a4ae')
+    l_inter.place(x=240, y=180)                       #Define a Label and put it in position
 
-    ip_entry = tk.Entry(window,show=None,width=16,bg="#37474F",fg='#eceff1')
-    ip_entry.place(x=170,y=40)                             #Define a Entry and put it in position
+    ip_entry = tk.Entry(window, show=None, width=16, bg="#37474F", fg='#eceff1')
+    ip_entry.place(x=170, y=40)                             #Define a Entry and put it in position
 
-    l_ip_3=tk.Label(window,width=10,text='IP Address:',fg=TEXT_COLOR,bg='#000000')
-    l_ip_3.place(x=165,y=15)                         #Define a Label and put it in position
+    l_ip_3=tk.Label(window, width=10, text='IP Address:', fg=TEXT_COLOR, bg='#000000')
+    l_ip_3.place(x=165, y=15)                         #Define a Label and put it in position
 
-    Btn14= tk.Button(window, width=8, text='Connect',fg=TEXT_COLOR,bg=BUTTON_COLOR,command=connect_2,relief='ridge')
-    Btn14.place(x=300,y=35)                          #Define a Button and put it in position
+    Btn14= tk.Button(window, width=8, text='Connect', fg=TEXT_COLOR, bg=BUTTON_COLOR, command=connect_2, relief='ridge')
+    Btn14.place(x=300, y=35)                          #Define a Button and put it in position
 
-    BtnVIN = tk.Button(window, width=15, text='Voice Input',fg=TEXT_COLOR,bg=BUTTON_COLOR,relief='ridge')
-    BtnVIN.place(x=30,y=495)
+    BtnVIN = tk.Button(window, width=15, text='Voice Input', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnVIN.place(x=30, y=495)
 
-    l_VIN=tk.Label(window,width=16,text='Voice commands',fg=TEXT_COLOR,bg=BUTTON_COLOR)
-    l_VIN.place(x=30,y=465)      
+    l_VIN=tk.Label(window, width=16, text='Voice commands', fg=TEXT_COLOR, bg=BUTTON_COLOR)
+    l_VIN.place(x=30, y=465)      
 
     #Define buttons and put these in position
-    Btn0 = tk.Button(window, width=8, text='Forward',fg=TEXT_COLOR,bg=BUTTON_COLOR,relief='ridge')
-    Btn1 = tk.Button(window, width=8, text='Backward',fg=TEXT_COLOR,bg=BUTTON_COLOR,relief='ridge')
-    Btn2 = tk.Button(window, width=8, text='Left',fg=TEXT_COLOR,bg=BUTTON_COLOR,relief='ridge')
-    Btn3 = tk.Button(window, width=8, text='Right',fg=TEXT_COLOR,bg=BUTTON_COLOR,relief='ridge')
-    Btn4 = tk.Button(window, width=8, text='Stop',fg=TEXT_COLOR,bg=BUTTON_COLOR,relief='ridge')
-    Btn5 = tk.Button(window, width=8, text='Follow',fg=TEXT_COLOR,bg=BUTTON_COLOR,relief='ridge')
+    Btn0 = tk.Button(window, width=8, text='Forward', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn1 = tk.Button(window, width=8, text='Backward', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn2 = tk.Button(window, width=8, text='Left', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn3 = tk.Button(window, width=8, text='Right', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn4 = tk.Button(window, width=8, text='Stop', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn5 = tk.Button(window, width=8, text='Follow', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     
-    Btn6 = tk.Button(window, width=8, text='Left',fg=TEXT_COLOR,bg=BUTTON_COLOR,relief='ridge')
-    Btn7 = tk.Button(window, width=8, text='Right',fg=TEXT_COLOR,bg=BUTTON_COLOR,relief='ridge')
-    Btn8 = tk.Button(window, width=8, text='Down',fg=TEXT_COLOR,bg=BUTTON_COLOR,relief='ridge')
-    Btn9 = tk.Button(window, width=8, text='Up',fg=TEXT_COLOR,bg=BUTTON_COLOR,relief='ridge')
-    Btn10 = tk.Button(window, width=8, text='Home',fg=TEXT_COLOR,bg=BUTTON_COLOR,relief='ridge')
-    Btn11 = tk.Button(window, width=8, text='Exit',fg=TEXT_COLOR,bg=BUTTON_COLOR,relief='ridge')
+    Btn6 = tk.Button(window, width=8, text='Left', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn7 = tk.Button(window, width=8, text='Right', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn8 = tk.Button(window, width=8, text='Down', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn9 = tk.Button(window, width=8, text='Up', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn10 = tk.Button(window, width=8, text='Home', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn11 = tk.Button(window, width=8, text='Exit', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
 
-    Btn12 = tk.Button(window, width=8, text='Set',command=spd_set,fg=TEXT_COLOR,bg=BUTTON_COLOR,relief='ridge')
-    Btn13 = tk.Button(window, width=8,height=3, text='Scan',fg=TEXT_COLOR,bg=BUTTON_COLOR,relief='ridge')
+    Btn12 = tk.Button(window, width=8, text='Set', command=spd_set, fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn13 = tk.Button(window, width=8, height=3, text='Scan', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
 
-    Btn0.place(x=100,y=195)
-    Btn1.place(x=100,y=230)
-    Btn2.place(x=30,y=230)
-    Btn3.place(x=170,y=230)
-    Btn4.place(x=170,y=275)
-    Btn5.place(x=30,y=275)
+    Btn0.place(x=100, y=195)
+    Btn1.place(x=100, y=230)
+    Btn2.place(x=30, y=230)
+    Btn3.place(x=170, y=230)
+    Btn4.place(x=170, y=275)
+    Btn5.place(x=30, y=275)
     
-    Btn6.place(x=565,y=230)
-    Btn7.place(x=705,y=230)
-    Btn8.place(x=635,y=265)
-    Btn9.place(x=635,y=195)
-    Btn10.place(x=635,y=230)
-    Btn11.place(x=705,y=10)
+    Btn6.place(x=565, y=230)
+    Btn7.place(x=705, y=230)
+    Btn8.place(x=635, y=265)
+    Btn9.place(x=635, y=195)
+    Btn10.place(x=635, y=230)
+    Btn11.place(x=705, y=10)
 
-    Btn12.place(x=535,y=107)
-    Btn13.place(x=350,y=330)
+    Btn12.place(x=535, y=107)
+    Btn13.place(x=350, y=330)
 
     # Bind the buttons with the corresponding callback function
     Btn0.bind('<ButtonPress-1>', call_forward)
@@ -765,9 +759,10 @@ def init():
 
 # Main program body    
 if __name__ == '__main__':
-    opencv_socket = socket()
-    opencv_socket.bind(('0.0.0.0', 8080))
-    opencv_socket.listen(0)
+    # the following code doesn't seem to be needed so I commented it out for now
+    #opencv_socket = socket()
+    #opencv_socket.bind(('0.0.0.0', 8080))
+    #opencv_socket.listen(0)
 
     context = zmq.Context()
     footage_socket = context.socket(zmq.SUB)
@@ -777,7 +772,7 @@ if __name__ == '__main__':
     init()             # Load GUI
     window.mainloop()  # Run the window event processing loop
 
-    if ip_stu == 0:
+    if tcpClicSock != None:
         print ("closing WIFI connection to robot")
         tcpClicSock.close()          # Close socket or it may not connect with the server again
 
