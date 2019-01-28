@@ -18,6 +18,8 @@ import cv2
 import zmq
 import base64
 import numpy as np
+from tkinter import font
+
 
 # constants
 BUFFER_SIZE      = 1024     
@@ -55,6 +57,8 @@ E_M1 = None
 E_M2 = None
 E_T1 = None
 E_T2 = None
+var_x_scan = None
+var_spd = None
 
 #Global variables of input status
 c_f_stu=0
@@ -82,8 +86,9 @@ def video_show():
         try:
             frame = footage_socket.recv_string()
         except Exception:
-            print ("got socket exception in video_show thread, will terminate thread")
-            exit()
+            print ("got socket exception in video_show thread, will exit thread")
+            time.sleep(1)
+            sys.exit()
         img = base64.b64decode(frame)
         npimg = np.frombuffer(img, dtype=np.uint8)
         source = cv2.imdecode(npimg, 1)
@@ -317,14 +322,14 @@ def ET2_set(event):            #Call this function for speed adjustment
 def connect(event):       #Call this function to connect with the server
     if ip_stu == 1:
         sc=thread.Thread(target=socket_connect) #Define a thread for connection
-        sc.setDaemon(True)                      #'True' means it is a front thread,it would close when the mainloop() closes
+        sc.setDaemon(True)                      #True means it is a front thread, will close when mainloop() closes
         sc.start()                              #Thread starts
 
 
 def connect_2():          #Call this function to connect with the server
     if ip_stu == 1:
         sc=thread.Thread(target=socket_connect) #Define a thread for connection
-        sc.setDaemon(True)                      #'True' means it is a front thread,it would close when the mainloop() closes
+        sc.setDaemon(True)                      #True means it is a front thread, will close when mainloop() closes
         sc.start()                              #Thread starts
 
 
@@ -358,11 +363,11 @@ def socket_connect():     #Call this function to connect with the robot server
             Btn14.config(state='disabled')        #Disable the Entry
                     
             at=thread.Thread(target=code_receive) #Define a thread for data receiving
-            at.setDaemon(True)                    #'True' means it is a front thread, it would close when the mainloop() closes
+            at.setDaemon(True)                    #True means it is a front thread, will close when mainloop() closes
             at.start()                            #Thread starts
 
             video_thread=thread.Thread(target=video_show) #Define a thread for data receiving
-            video_thread.setDaemon(True)                  #'True' means it is a front thread,it would close when the mainloop() closes
+            video_thread.setDaemon(True)          #True means it is a front thread, will close when mainloop() closes
             print('Video Connected')
             video_thread.start()                          #Thread starts
 
@@ -439,7 +444,8 @@ def code_receive():     #A function for data receiving
             dis_list=f_list
             #can_scan.delete(line)
             #can_scan.delete(point_scan)
-            can_scan_1 = tk.Canvas(window, bg=CANVAS_COLOR, height=250, width=320, highlightthickness=0) #define a canvas
+            # define a canvas
+            can_scan_1 = tk.Canvas(window, bg=CANVAS_COLOR, height=250, width=320, highlightthickness=0) 
             can_scan_1.place(x=440,y=330) #Place the canvas
             line = can_scan_1.create_line(0, 62, 320, 62, fill='darkgray')   #Draw a line on canvas
             line = can_scan_1.create_line(0, 124, 320, 124, fill='darkgray') #Draw a line on canvas
@@ -452,13 +458,13 @@ def code_receive():     #A function for data receiving
 
             for i in range (0,len(dis_list)):   #Scale the result to the size as canvas
                 try:
-                    len_dis_1 = int((dis_list[i]/x_range)*250)                          #600 is the height of canvas
-                    pos     = int((i/len(dis_list))*320)                                #740 is the width of canvas
-                    pos_ra  = int(((i/len(dis_list))*140)+20)                           #Scale the direction range to (20-160)
-                    len_dis = int(len_dis_1*(math.sin(math.radians(pos_ra))))           #len_dis is the height of the line
+                    len_dis_1 = int((dis_list[i]/x_range)*250)                 #600 is the height of canvas
+                    pos     = int((i/len(dis_list))*320)                       #740 is the width of canvas
+                    pos_ra  = int(((i/len(dis_list))*140)+20)                  #Scale the direction range to (20-160)
+                    len_dis = int(len_dis_1*(math.sin(math.radians(pos_ra))))  #len_dis is the height of the line
 
                     x0_l, y0_l, x1_l, y1_l = pos, (250-len_dis), pos, (250-len_dis)       #The position of line
-                    x0, y0, x1, y1 = (pos+3), (250-len_dis+3), (pos-3), (250-len_dis-3)         #The position of arc
+                    x0, y0, x1, y1 = (pos+3), (250-len_dis+3), (pos-3), (250-len_dis-3)   #The position of arc
 
                     if pos <= 160:                                                      #Scale the whole picture to a shape of sector
                         pos = 160-abs(int(len_dis_1*(math.cos(math.radians(pos_ra)))))
@@ -469,8 +475,9 @@ def code_receive():     #A function for data receiving
 
                     y1_l = y1_l-abs(math.sin(math.radians(pos_ra))*130)              #Orientation of line
 
-                    line = can_scan_1.create_line(pos, y0_l, x1_l, y1_l, fill=color_line)   #Draw a line on canvas
-                    point_scan = can_scan_1.create_oval((pos+3), y0, (pos-3), y1, fill=color_oval, outline=color_oval) #Draw a arc on canvas
+                    line = can_scan_1.create_line(pos, y0_l, x1_l, y1_l, fill=LINE_COLOR)   #Draw a line on canvas
+                    #Draw a arc on canvas
+                    point_scan = can_scan_1.create_oval((pos+3), y0, (pos-3), y1, fill=OVAL_COLOR, outline=OVAL_COLOR) 
                 except:
                     pass
             can_tex_11=can_scan_1.create_text((27,178), text='%sm'%round((x_range/4),2), fill='#aeea00')     #Create a text on canvas
@@ -541,15 +548,27 @@ def code_receive():     #A function for data receiving
 
 
 def init():
-    global ip_entry, l_ip_4, l_ip_5, Btn14, Btn5, BtnFL, BtnLED, BtnOCV, BtnSR1, \
+    global ip_entry, l_ip_4, l_ip_5, Btn14, Btn5, BtnFL, BtnLED, BtnOCV, BtnSR1, var_x_scan, var_spd, \
            BtnSR2, BtnSR3, l_ip, BtnIP, ipaddr, E_C1, E_C2, E_M1, E_M2, E_T1, E_T2
 
     window.title('Adeept')              #Main window title
     window.geometry('917x630')          #Main window size, middle of the English letter x.
     window.config(bg=BACKGROUND_COLOR)  #Set the background color of root window
 
+    print ("running on " + sys.platform + " platform")
+    if "linux" in sys.platform:
+        # reducing font size so widgets fit right on Raspbian
+        tf = font.nametofont("TkTextFont")      # used in entry widgets
+        tf.configure(size=8)
+        #print ("TkTextFont:")
+        #print (tf.actual())
+        tf = font.nametofont("TkDefaultFont")   # used in buttons
+        tf.configure(size=7)
+        #print ("TkDefaultFont:")
+        #print (tf.actual())
+
     var_spd = tk.StringVar()  #Speed value saved in a StringVar
-    var_spd.set(1)            #Set a default speed,but change it would not change the default speed value in the car,you need to click button'Set' to send the value to the car
+    var_spd.set(1)            #Set default speed, to change the default speed value in the car,you need to click button 'Set'
 
     var_x_scan = tk.IntVar()  #Scan range value saved in a IntVar
     var_x_scan.set(2)         #Set a default scan value
@@ -624,7 +643,10 @@ def init():
     s1 = tk.Scale(window, label="               < Slow   Speed Adjustment   Fast >",
     from_=0.4, to=1, orient=tk.HORIZONTAL, length=400,
     showvalue=0.1, tickinterval=0.1, resolution=0.2, variable=var_spd, fg=TEXT_COLOR, bg=BACKGROUND_COLOR, highlightthickness=0)
-    s1.place(x=200, y=100)                            #Define a Scale and put it in position
+    if "linux" in sys.platform:
+        s1.place(x=200, y=120)          #Define a Scale and put it in position on windows platform
+    else:
+        s1.place(x=200, y=100)          #Define a Scale and put it in position on linux platform
 
     s3 = tk.Scale(window, label="< Near   Scan Range Adjustment(Meter(s))   Far >",
     from_=1, to=5, orient=tk.HORIZONTAL, length=300,
@@ -645,7 +667,8 @@ def init():
 
     l_inter=tk.Label(window, width=45, text='< Car Adjustment              Camera Adjustment>\nW:Move Forward                 Look Up:I\nS:Move Backward            Look Down:K\nA:Turn Left                          Turn Left:J\nD:Turn Right                      Turn Right:L\nZ:Auto Mode On          Look Forward:H\nC:Auto Mode Off      Ultrasdonic Scan:X' ,
     fg='#212121', bg='#90a4ae')
-    l_inter.place(x=240, y=180)                       #Define a Label and put it in position
+    #l_inter.place(x=240, y=180)                       #Define a Label and put it in position
+    l_inter.place(x=270, y=180)                       #Define a Label and put it in position
 
     ip_entry = tk.Entry(window, show=None, width=16, bg="#37474F", fg='#eceff1')
     ip_entry.place(x=170, y=40)                             #Define a Entry and put it in position
@@ -773,12 +796,16 @@ if __name__ == '__main__':
     window.mainloop()  # Run the window event processing loop
 
     if tcpClicSock != None:
+        #command the server to quit if it hasn't already been told to exit
+        tcpClicSock.send(('quit').encode())
         print ("closing WIFI connection to robot")
         tcpClicSock.close()          # Close socket or it may not connect with the server again
 
-    print ("destroying FPV window")
+    print ("destroying zmq context")
     # kill the zmq context to cause an exception to be raised in video thread so that
     # it quits and allows the destroyAllWindows to close the FPV window reliably
     context.destroy()
+    time.sleep(1)
+    print ("destroying FPV window")
     cv2.destroyAllWindows()
     print ("exiting robot client")
