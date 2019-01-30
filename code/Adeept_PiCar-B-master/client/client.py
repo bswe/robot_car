@@ -59,6 +59,8 @@ E_T1 = None
 E_T2 = None
 var_x_scan = None
 var_spd = None
+l_VIN = None
+BtnVIN = None
 
 #Global variables of input status
 c_f_stu=0
@@ -111,14 +113,14 @@ def call_back(event):            #When this function is called,client commands t
 
 
 def call_stop(event):            #When this function is called,client commands the car to stop moving
-    global c_f_stu,c_b_stu,c_l_stu,c_r_stu
+    global c_f_stu, c_b_stu
     c_f_stu=0
     c_b_stu=0
     tcpClicSock.send(('stop').encode())
 
 
 def call_stop_2(event):            #When this function is called,client commands the car go straight
-    global c_l_stu,c_r_stu
+    global c_l_stu, c_r_stu
     c_r_stu=0
     c_l_stu=0
     tcpClicSock.send(('middle').encode())
@@ -236,12 +238,12 @@ def call_opencv():                  #Start OpenCV mode
         tcpClicSock.send(('Stop').encode())
 
 def voice_input():
-    global a2t
     r = sr.Recognizer()
     with sr.Microphone() as source:
-        #r.adjust_for_ambient_noise(source)
-        r.record(source, duration=2)
+        r.adjust_for_ambient_noise(source)
+        #r.record(source, duration=2)
         print("Say something!")
+        l_VIN.update_idletasks()      # cause widgets in GUI to update and display properly
         audio = r.listen(source)
     try:
         a2t=r.recognize_sphinx(audio, keyword_entries=[('forward', 1.0),
@@ -254,37 +256,39 @@ def voice_input():
                                                        ('lights on', 1),
                                                        ('lights off', 1)])
         print("Sphinx thinks you said " + a2t)
+        return a2t
     except sr.UnknownValueError:
         print("Sphinx could not understand audio")
     except sr.RequestError as e:
         print("Sphinx error; {0}".format(e))
-    BtnVIN.config(fg=TEXT_COLOR, bg=BUTTON_COLOR)
-    return a2t
+    return 'Try again'
 
 
 def voice_command(event):
-    l_VIN.config(text='Command?')
+    l_VIN.config(text='Say something!')
     BtnVIN.config(fg='#0277BD', bg='#BBDEFB')
     v_command=voice_input()
     l_VIN.config(text='%s'%v_command)
-    if 'forward' in v_command:
+    BtnVIN.config(fg=TEXT_COLOR, bg=BUTTON_COLOR)
+    if tcpClicSock == None:              # for offline testing
+        return
+    if  v_command.startswith('forward'):
         tcpClicSock.send(('forward').encode())
-    elif 'backward' in v_command:
+    elif v_command.startswith('backward'):
         tcpClicSock.send(('backward').encode())
-    elif 'left' in v_command:
+    elif v_command.startswith('left'):
         tcpClicSock.send(('Left').encode())
-    elif 'right' in v_command:
+    elif v_command.startswith('right'):
         tcpClicSock.send(('Right').encode())
-    elif 'stop' in v_command:
-        tcpClicSock.send(('stop').encode())
+    elif v_command.startswith('stop'):
         tcpClicSock.send(('Stop').encode())
-    elif 'find line' in v_command:
+    elif v_command.startswith('find line'):
         tcpClicSock.send(('findline').encode())
-    elif 'follow' in v_command:
+    elif v_command.startswith('follow'):
         tcpClicSock.send(('auto').encode())
-    elif 'lights on' in v_command:
+    elif v_command.startswith('lights on'):
         tcpClicSock.send(('lightsON').encode())
-    elif 'lights off' in v_command:
+    elif v_command.startswith('lights off'):
         tcpClicSock.send(('lightsOFF').encode())
     else:
         pass
@@ -549,7 +553,7 @@ def code_receive():     #A function for data receiving
 
 def init():
     global ip_entry, l_ip_4, l_ip_5, Btn14, Btn5, BtnFL, BtnLED, BtnOCV, BtnSR1, var_x_scan, var_spd, \
-           BtnSR2, BtnSR3, l_ip, BtnIP, ipaddr, E_C1, E_C2, E_M1, E_M2, E_T1, E_T2
+           BtnSR2, BtnSR3, l_ip, BtnIP, ipaddr, E_C1, E_C2, E_M1, E_M2, E_T1, E_T2, l_VIN, BtnVIN
 
     window.title('Adeept')              #Main window title
     window.geometry('917x630')          #Main window size, middle of the English letter x.
@@ -667,8 +671,10 @@ def init():
 
     l_inter=tk.Label(window, width=45, text='< Car Adjustment              Camera Adjustment>\nW:Move Forward                 Look Up:I\nS:Move Backward            Look Down:K\nA:Turn Left                          Turn Left:J\nD:Turn Right                      Turn Right:L\nZ:Auto Mode On          Look Forward:H\nC:Auto Mode Off      Ultrasdonic Scan:X' ,
     fg='#212121', bg='#90a4ae')
-    #l_inter.place(x=240, y=180)                       #Define a Label and put it in position
-    l_inter.place(x=270, y=180)                       #Define a Label and put it in position
+    if "linux" in sys.platform:
+        l_inter.place(x=270, y=180)                    #Define a Label and put it in position
+    else:
+        l_inter.place(x=240, y=180)                    #Define a Label and put it in position
 
     ip_entry = tk.Entry(window, show=None, width=16, bg="#37474F", fg='#eceff1')
     ip_entry.place(x=170, y=40)                             #Define a Entry and put it in position
