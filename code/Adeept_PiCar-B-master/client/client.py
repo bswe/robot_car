@@ -488,6 +488,13 @@ def code_receive():     #A function for data receiving
             can_tex_12=can_scan_1.create_text((27,116), text='%sm'%round((x_range/2),2), fill='#aeea00')     #Create a text on canvas
             can_tex_13=can_scan_1.create_text((27,54), text='%sm'%round((x_range*0.75),2), fill='#aeea00')   #Create a text on canvas
 
+        elif 'voice_3' in str(code_car):         # put this case before the numbers below because of the 3
+            BtnSR3.config(fg='#0277BD', bg='#BBDEFB')
+            BtnSR1.config(state='disabled')
+            BtnSR2.config(state='disabled')
+            l_ip.config(text='Sphinx SR')        #Put the text on the label
+            speech_status = 1
+
         elif '1' in str(code_car):               #Translate the code to text
             l_ip.config(text='Moving Forward')   #Put the text on the label
         elif '2' in str(code_car):               #Translate the code to text
@@ -542,13 +549,6 @@ def code_receive():     #A function for data receiving
             speech_status   = 0
             opencv_status   = 0
             auto_status     = 0
-
-        elif 'voice_3' in str(code_car):
-            BtnSR3.config(fg='#0277BD', bg='#BBDEFB')
-            BtnSR1.config(state='disabled')
-            BtnSR2.config(state='disabled')
-            l_ip.config(text='Sphinx SR')        #Put the text on the label
-            speech_status = 1
 
 
 def init():
