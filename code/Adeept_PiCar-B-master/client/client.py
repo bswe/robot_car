@@ -45,8 +45,6 @@ Btn14 = None
 BtnFL = None
 BtnLED = None
 BtnOCV = None
-BtnSR1 = None
-BtnSR2 = None
 BtnSR3 = None
 l_ip = None
 BtnIP = None
@@ -490,8 +488,6 @@ def code_receive():     #A function for data receiving
 
         elif 'voice_3' in str(code_car):         # put this case before the numbers below because of the 3
             BtnSR3.config(fg='#0277BD', bg='#BBDEFB')
-            BtnSR1.config(state='disabled')
-            BtnSR2.config(state='disabled')
             l_ip.config(text='Sphinx SR')        #Put the text on the label
             speech_status = 1
 
@@ -552,25 +548,39 @@ def code_receive():     #A function for data receiving
 
 
 def init():
-    global ip_entry, l_ip_4, l_ip_5, Btn14, Btn5, BtnFL, BtnLED, BtnOCV, BtnSR1, var_x_scan, var_spd, \
-           BtnSR2, BtnSR3, l_ip, BtnIP, ipaddr, E_C1, E_C2, E_M1, E_M2, E_T1, E_T2, l_VIN, BtnVIN
+    global ip_entry, l_ip_4, l_ip_5, Btn14, Btn5, BtnFL, BtnLED, BtnOCV, var_x_scan, var_spd, \
+           BtnSR3, l_ip, BtnIP, ipaddr, E_C1, E_C2, E_M1, E_M2, E_T1, E_T2, l_VIN, BtnVIN
 
     window.title('Adeept')              #Main window title
     window.geometry('917x630')          #Main window size, middle of the English letter x.
     window.config(bg=BACKGROUND_COLOR)  #Set the background color of root window
 
     print ("running on " + sys.platform + " platform")
+    # adjust some GUI widget widths and positions for raspbian and windows differences
     if "linux" in sys.platform:
+        IP_ENTRY_WIDTH = 14
+        BTN_WIDTH_1 = 5
+        BTN_WIDTH_2 = 11
+        INFO_WIDTH = 38
+        INFO_X = 247
+        IP_WIDTH = 15
         # reducing font size so widgets fit right on Raspbian
-        tf = font.nametofont("TkTextFont")      # used in entry widgets
-        tf.configure(size=8)
+        #tf = font.nametofont("TkTextFont")      # used in entry widgets
+        #tf.configure(size=8)
         #print ("TkTextFont:")
         #print (tf.actual())
-        tf = font.nametofont("TkDefaultFont")   # used in buttons
-        tf.configure(size=7)
+        #tf = font.nametofont("TkDefaultFont")   # used in buttons
+        #tf.configure(size=7)
         #print ("TkDefaultFont:")
         #print (tf.actual())
-
+    else:   # for windows
+        IP_ENTRY_WIDTH = 16
+        BTN_WIDTH_1 = 8
+        BTN_WIDTH_2 = 15
+        INFO_WIDTH = 45
+        INFO_X = 240
+        IP_WIDTH = 18
+        
     var_spd = tk.StringVar()  #Speed value saved in a StringVar
     var_spd.set(1)            #Set default speed, to change the default speed value in the car,you need to click button 'Set'
 
@@ -582,46 +592,46 @@ def init():
     l_logo.photo = logo
     l_logo.place(x=30,y=13)                        #Place the Label in a right position
 
-    BtnC1 = tk.Button(window, width=15, text='Camera Middle', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnC1 = tk.Button(window, width=BTN_WIDTH_2, text='Camera Middle', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnC1.place(x=785,y=10)
-    E_C1 = tk.Entry(window, show=None, width=16, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
+    E_C1 = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
     E_C1.place(x=785,y=45)                             #Define a Entry and put it in position
 
-    BtnC2 = tk.Button(window, width=15, text='Ultrasonic Middle', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnC2 = tk.Button(window, width=BTN_WIDTH_2, text='Ultrasonic Middle', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnC2.place(x=785,y=100)
-    E_C2 = tk.Entry(window, show=None, width=16, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
+    E_C2 = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
     E_C2.place(x=785,y=135)                             #Define a Entry and put it in position
 
-    BtnM1 = tk.Button(window, width=15, text='Motor A Speed', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnM1 = tk.Button(window, width=BTN_WIDTH_2, text='Motor A Speed', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnM1.place(x=785,y=190)
-    E_M1 = tk.Entry(window, show=None, width=16, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
+    E_M1 = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
     E_M1.place(x=785, y=225)                             #Define a Entry and put it in position
 
-    BtnM2 = tk.Button(window, width=15, text='Motor B Speed', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnM2 = tk.Button(window, width=BTN_WIDTH_2, text='Motor B Speed', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnM2.place(x=785 ,y=280)
-    E_M2 = tk.Entry(window, show=None, width=16, bg="#37474F",fg='#eceff1', exportselection=0, justify='center')
+    E_M2 = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F",fg='#eceff1', exportselection=0, justify='center')
     E_M2.place(x=785, y=315)                             #Define a Entry and put it in position
 
-    BtnT1 = tk.Button(window, width=15, text='Look Up Max', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnT1 = tk.Button(window, width=BTN_WIDTH_2, text='Look Up Max', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnT1.place(x=785, y=370)
-    E_T1 = tk.Entry(window, show=None, width=16, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
+    E_T1 = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
     E_T1.place(x=785, y=405)                             #Define a Entry and put it in position
 
-    BtnT2 = tk.Button(window, width=15, text='Look Down Max', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnT2 = tk.Button(window, width=BTN_WIDTH_2, text='Look Down Max', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnT2.place(x=785, y=460)
-    E_T2 = tk.Entry(window, show=None, width=16, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
+    E_T2 = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
     E_T2.place(x=785, y=495)                             #Define a Entry and put it in position
 
-    BtnLED = tk.Button(window, width=15, text='Lights ON', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnLED = tk.Button(window, width=BTN_WIDTH_2, text='Lights ON', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnLED.place(x=300, y=420)
 
-    BtnOCV = tk.Button(window, width=15, text='OpenCV', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge', command=call_opencv)
+    BtnOCV = tk.Button(window, width=BTN_WIDTH_2, text='OpenCV', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge', command=call_opencv)
     BtnOCV.place(x=30, y=420)
 
-    BtnFL = tk.Button(window, width=15, text='Find Line', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnFL = tk.Button(window, width=BTN_WIDTH_2, text='Find Line', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnFL.place(x=165, y=420)
 
-    BtnSR3 = tk.Button(window, width=15, text='Sphinx SR', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge', command=call_SR3)
+    BtnSR3 = tk.Button(window, width=BTN_WIDTH_2, text='Sphinx SR', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge', command=call_SR3)
     BtnSR3.place(x=300, y=495)
 
     E_C1.insert ( 0, 'Default:425' ) 
@@ -648,9 +658,9 @@ def init():
     from_=0.4, to=1, orient=tk.HORIZONTAL, length=400,
     showvalue=0.1, tickinterval=0.1, resolution=0.2, variable=var_spd, fg=TEXT_COLOR, bg=BACKGROUND_COLOR, highlightthickness=0)
     if "linux" in sys.platform:
-        s1.place(x=200, y=120)          #Define a Scale and put it in position on windows platform
-    else:
         s1.place(x=200, y=100)          #Define a Scale and put it in position on linux platform
+    else:
+        s1.place(x=200, y=100)          #Define a Scale and put it in position on windows platform
 
     s3 = tk.Scale(window, label="< Near   Scan Range Adjustment(Meter(s))   Far >",
     from_=1, to=5, orient=tk.HORIZONTAL, length=300,
@@ -663,20 +673,17 @@ def init():
     l_ip_2=tk.Label(window, width=18, text='Speed:%s'%(var_spd.get()), fg=TEXT_COLOR, bg=BUTTON_COLOR)
     l_ip_2.place(x=30, y=145)                         #Define a Label and put it in position
 
-    l_ip_4=tk.Label(window, width=18, text='Disconnected', fg=TEXT_COLOR, bg='#F44336')
+    l_ip_4=tk.Label(window, width=IP_WIDTH, text='Disconnected', fg=TEXT_COLOR, bg='#F44336')
     l_ip_4.place(x=637, y=110)                         #Define a Label and put it in position
 
-    l_ip_5=tk.Label(window, width=18, text='Use default IP', fg=TEXT_COLOR, bg=BUTTON_COLOR)
+    l_ip_5=tk.Label(window, width=IP_WIDTH, text='Use default IP', fg=TEXT_COLOR, bg=BUTTON_COLOR)
     l_ip_5.place(x=637, y=145)                         #Define a Label and put it in position
 
-    l_inter=tk.Label(window, width=45, text='< Car Adjustment              Camera Adjustment>\nW:Move Forward                 Look Up:I\nS:Move Backward            Look Down:K\nA:Turn Left                          Turn Left:J\nD:Turn Right                      Turn Right:L\nZ:Auto Mode On          Look Forward:H\nC:Auto Mode Off      Ultrasdonic Scan:X' ,
+    l_inter=tk.Label(window, width=INFO_WIDTH, text='< Car Adjustment              Camera Adjustment>\nW:Move Forward                 Look Up:I\nS:Move Backward            Look Down:K\nA:Turn Left                          Turn Left:J\nD:Turn Right                      Turn Right:L\nZ:Auto Mode On          Look Forward:H\nC:Auto Mode Off      Ultrasdonic Scan:X' ,
     fg='#212121', bg='#90a4ae')
-    if "linux" in sys.platform:
-        l_inter.place(x=270, y=180)                    #Define a Label and put it in position
-    else:
-        l_inter.place(x=240, y=180)                    #Define a Label and put it in position
+    l_inter.place(x=INFO_X, y=180)                    #Define a Label and put it in position
 
-    ip_entry = tk.Entry(window, show=None, width=16, bg="#37474F", fg='#eceff1')
+    ip_entry = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1')
     ip_entry.place(x=170, y=40)                             #Define a Entry and put it in position
 
     l_ip_3=tk.Label(window, width=10, text='IP Address:', fg=TEXT_COLOR, bg='#000000')
@@ -685,29 +692,29 @@ def init():
     Btn14= tk.Button(window, width=8, text='Connect', fg=TEXT_COLOR, bg=BUTTON_COLOR, command=connect_2, relief='ridge')
     Btn14.place(x=300, y=35)                          #Define a Button and put it in position
 
-    BtnVIN = tk.Button(window, width=15, text='Voice Input', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnVIN = tk.Button(window, width=BTN_WIDTH_2, text='Voice Input', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnVIN.place(x=30, y=495)
 
     l_VIN=tk.Label(window, width=16, text='Voice commands', fg=TEXT_COLOR, bg=BUTTON_COLOR)
     l_VIN.place(x=30, y=465)      
 
     #Define buttons and put these in position
-    Btn0 = tk.Button(window, width=8, text='Forward', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn1 = tk.Button(window, width=8, text='Backward', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn2 = tk.Button(window, width=8, text='Left', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn3 = tk.Button(window, width=8, text='Right', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn4 = tk.Button(window, width=8, text='Stop', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn5 = tk.Button(window, width=8, text='Follow', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn0 = tk.Button(window, width=BTN_WIDTH_1, text='Forward', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn1 = tk.Button(window, width=BTN_WIDTH_1, text='Backward', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn2 = tk.Button(window, width=BTN_WIDTH_1, text='Left', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn3 = tk.Button(window, width=BTN_WIDTH_1, text='Right', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn4 = tk.Button(window, width=BTN_WIDTH_1, text='Stop', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn5 = tk.Button(window, width=BTN_WIDTH_1, text='Follow', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     
-    Btn6 = tk.Button(window, width=8, text='Left', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn7 = tk.Button(window, width=8, text='Right', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn8 = tk.Button(window, width=8, text='Down', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn9 = tk.Button(window, width=8, text='Up', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn10 = tk.Button(window, width=8, text='Home', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn11 = tk.Button(window, width=8, text='Exit', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn6 = tk.Button(window, width=BTN_WIDTH_1, text='Left', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn7 = tk.Button(window, width=BTN_WIDTH_1, text='Right', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn8 = tk.Button(window, width=BTN_WIDTH_1, text='Down', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn9 = tk.Button(window, width=BTN_WIDTH_1, text='Up', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn10 = tk.Button(window, width=BTN_WIDTH_1, text='Home', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn11 = tk.Button(window, width=BTN_WIDTH_1, text='Exit', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
 
-    Btn12 = tk.Button(window, width=8, text='Set', command=spd_set, fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn13 = tk.Button(window, width=8, height=3, text='Scan', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn12 = tk.Button(window, width=BTN_WIDTH_1, text='Set', command=spd_set, fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn13 = tk.Button(window, width=BTN_WIDTH_1, text='Scan', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
 
     Btn0.place(x=100, y=195)
     Btn1.place(x=100, y=230)
