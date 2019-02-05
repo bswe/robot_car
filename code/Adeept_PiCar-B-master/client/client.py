@@ -62,6 +62,7 @@ var_x_scan = None
 var_spd = None
 l_VIN = None
 BtnVIN = None
+Steering = None
 
 #Global variables of input status
 c_f_stu=0
@@ -125,6 +126,14 @@ def call_stop_2(event):            #When this function is called,client commands
     c_r_stu=0
     c_l_stu=0
     tcpClicSock.send(('middle').encode())
+
+
+def call_steer_Left(event):            #When this function is called,client commands the car to turn left
+    tcpClicSock.send(('SteerLeft').encode())
+
+
+def call_steer_Right(event):           #When this function is called,client commands the car to turn right
+    tcpClicSock.send(('SteerRight').encode())
 
 
 def click_call_Left(event):            #When this function is called,client commands the car to turn left
@@ -557,7 +566,7 @@ def code_receive():     #A function for data receiving
 
 
 def init():
-    global ip_entry, l_ip_4, l_ip_5, Btn14, Btn5, BtnFL, BtnLED, BtnOCV, var_x_scan, var_spd, \
+    global ip_entry, l_ip_4, l_ip_5, Btn14, Btn5, BtnFL, BtnLED, BtnOCV, var_x_scan, var_spd, Steering, \
            BtnSR3, l_ip, BtnIP, ipaddr, E_C1, E_C2, E_M1, E_M2, E_T1, E_T2, l_VIN, BtnVIN
 
     window.title('Adeept')              #Main window title
@@ -713,10 +722,12 @@ def init():
     l_VIN.place(x=30, y=465)      
 
     #Define buttons and put these in position
+    Btn_steer_right = tk.Button(window, width=BTN_WIDTH_1, text='Right', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn_steer_left = tk.Button(window, width=BTN_WIDTH_1, text='Left', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     Btn0 = tk.Button(window, width=BTN_WIDTH_1, text='Forward', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     Btn1 = tk.Button(window, width=BTN_WIDTH_1, text='Backward', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn2 = tk.Button(window, width=BTN_WIDTH_1, text='Left', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn3 = tk.Button(window, width=BTN_WIDTH_1, text='Right', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn2 = tk.Button(window, width=BTN_WIDTH_1, text='Max Left', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn3 = tk.Button(window, width=BTN_WIDTH_1, text='Max Right', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     Btn4 = tk.Button(window, width=BTN_WIDTH_1, text='Stop', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     Btn5 = tk.Button(window, width=BTN_WIDTH_1, text='Follow', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     
@@ -730,6 +741,8 @@ def init():
     Btn12 = tk.Button(window, width=BTN_WIDTH_1, text='Set', command=spd_set, fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     Btn13 = tk.Button(window, width=BTN_WIDTH_1, text='Scan', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
 
+    Btn_steer_right.place(x=170, y=195)
+    Btn_steer_left.place(x=30, y=195)
     Btn0.place(x=100, y=195)
     Btn1.place(x=100, y=230)
     Btn2.place(x=30, y=230)
@@ -748,6 +761,8 @@ def init():
     Btn13.place(x=350, y=330)
 
     # Bind the buttons with the corresponding callback function
+    Btn_steer_right.bind('<ButtonPress-1>', call_steer_Right)
+    Btn_steer_left.bind('<ButtonPress-1>', call_steer_Left)
     Btn0.bind('<ButtonPress-1>', call_forward)
     Btn1.bind('<ButtonPress-1>', call_back)
     Btn2.bind('<ButtonPress-1>', click_call_Left)
