@@ -7,6 +7,9 @@
 # Author      : wcb
 # Date        : 1/24/2019
 
+import sys
+sys.path.insert(0, "../common")
+import config
 from socket import *
 import sys,subprocess
 import time
@@ -321,6 +324,10 @@ def ET2_set(event):            #Call this function for speed adjustment
     tcpClicSock.send(('LDMset:%s'%E_T2.get()).encode())   #Get a speed value from IntVar and send it to the car
 
 
+def Steering_set(event):            #Call this function for steering adjustment
+    tcpClicSock.send(('STEERINGset:%s'%Steering.get()).encode())   
+
+
 def connect(event):       #Call this function to connect with the server
     if ip_stu == 1:
         sc=thread.Thread(target=socket_connect) #Define a thread for connection
@@ -406,13 +413,14 @@ def code_receive():     #A function for data receiving
         elif 'SET' in str(code_car):
             set_list=code_car.decode()
             set_list=set_list.split()
-            s1,s2,s3,s4,s5,s6=set_list[1:]
+            s1,s2,s3,s4,s5,s6,s7=set_list[1:]
             E_C1.delete(0, 50)
             E_C2.delete(0, 50)
             E_M1.delete(0, 50)
             E_M2.delete(0, 50)
             E_T1.delete(0, 50)
             E_T2.delete(0, 50)
+            Steering.delete(0, 50)
 
             E_C1.insert ( 0, '%d'%int(s1) ) 
             E_C2.insert ( 0, '%d'%int(s2) ) 
@@ -420,6 +428,7 @@ def code_receive():     #A function for data receiving
             E_M2.insert ( 0, '%d'%int(s4) )
             E_T1.insert ( 0, '%d'%int(s5) ) 
             E_T2.insert ( 0, '%d'%int(s6) )
+            Steering.insert ( 0, '%d'%int(s7) )
 
         elif 'list' in str(code_car):         #Scan result receiving start
             dis_list=[]
@@ -592,12 +601,12 @@ def init():
     l_logo.photo = logo
     l_logo.place(x=30,y=13)                        #Place the Label in a right position
 
-    BtnC1 = tk.Button(window, width=BTN_WIDTH_2, text='Camera Middle', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnC1 = tk.Button(window, width=BTN_WIDTH_2, text='Camera Ver. Home', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnC1.place(x=785,y=10)
     E_C1 = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
     E_C1.place(x=785,y=45)                             #Define a Entry and put it in position
 
-    BtnC2 = tk.Button(window, width=BTN_WIDTH_2, text='Ultrasonic Middle', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnC2 = tk.Button(window, width=BTN_WIDTH_2, text='Camera Hor. Home', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnC2.place(x=785,y=100)
     E_C2 = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
     E_C2.place(x=785,y=135)                             #Define a Entry and put it in position
@@ -621,6 +630,11 @@ def init():
     BtnT2.place(x=785, y=460)
     E_T2 = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
     E_T2.place(x=785, y=495)                             #Define a Entry and put it in position
+
+    BtnSteering = tk.Button(window, width=BTN_WIDTH_2, text='Steering Cen.', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnSteering.place(x=785, y=550)
+    Steering = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
+    Steering.place(x=785, y=585)                             #Define a Entry and put it in position
 
     BtnLED = tk.Button(window, width=BTN_WIDTH_2, text='Lights ON', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnLED.place(x=300, y=420)
@@ -761,6 +775,7 @@ def init():
     BtnM2.bind('<ButtonPress-1>', EM2_set)
     BtnT1.bind('<ButtonPress-1>', ET1_set)
     BtnT2.bind('<ButtonPress-1>', ET2_set)
+    BtnSteering.bind('<ButtonPress-1>', Steering_set)
     BtnFL.bind('<ButtonPress-1>', find_line)
     BtnVIN.bind('<ButtonPress-1>', voice_command)
 
