@@ -1,21 +1,38 @@
-def replace_num(initial, new_num):   #Call this function to replace data in '.txt' file
-    newline=""
-    str_num=str(new_num)
-    with open("IP.txt","r") as f:
+def exportConfig(ItemName, Value):   # Call this function to export item to 'config.txt' file
+    ItemName += ":"
+    newlines = ""
+    found = False
+    with open("config.txt", "r") as f:
         for line in f.readlines():
-            if(line.find(initial) == 0):
-                line = initial+"%s" %(str_num)
-            newline += line
-    with open("IP.txt", "w") as f:
-        f.writelines(newline)    #Call this function to replace data in '.txt' file
+            if (line.find(ItemName) == 0):
+                # replace existing item value with new one
+                line = ItemName + str(Value)
+            newlines += line
+    if not found:
+        return False
+    with open("config.txt", "w") as f:
+        f.writelines(newlines)
+    return True
 
 
-def num_import(initial):            #Call this function to import data from '.txt' file
-    with open("IP.txt") as f:
+def importConfig(ItemName):          # Call this function to import item from 'config.txt' file
+    ItemName += ":"
+    item = None
+    with open("config.txt") as f:
         for line in f.readlines():
-            if(line.find(initial) == 0):
-                r=line
-    begin=len(list(initial))
-    snum=r[begin:]
-    n=snum
-    return n    
+            if(line.find(ItemName) == 0):
+                item = line
+                break
+    if item == None:
+        # item not found
+        return None
+    lenItemName = len(ItemName)
+    value = line[lenItemName:]
+    #print(str(lenItemName) + " " + value)
+    return value
+
+def importConfigInt(ItemName):
+    value = importConfig(ItemName)
+    if value == None:
+        return None
+    return int(value)

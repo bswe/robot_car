@@ -4,9 +4,12 @@
 #             : order from the client through TCP and carrying out the corresponding operation.
 # Website     : www.adeept.com
 # E-mail      : support@adeept.com
-# Author      : William & Tony DiCola (tony@tonydicola.com, the WS_2812 code)
-# Date        : 2018/10/12
+# Author      : wcb
+# Date        : 1/24/2019
 
+import sys
+sys.path.insert(0, "../common")
+import config
 import RPi.GPIO as GPIO
 import motor
 import ultra
@@ -16,7 +19,7 @@ import threading
 import Adafruit_PCA9685
 import picamera
 from picamera.array import PiRGBArray
-import turn
+import servos
 import led
 import findline
 import speech
@@ -84,39 +87,6 @@ dis_scan = 1
 ip_con     = ''
 wifi_status = 0
 
-
-def replace_num(initial,new_num):   #Call this function to replace data in '.txt' file
-    newline=""
-    str_num=str(new_num)
-    with open("set.txt","r") as f:
-        for line in f.readlines():
-            if(line.find(initial) == 0):
-                line = initial+"%s" %(str_num+"\n")
-            newline += line
-    with open("set.txt","w") as f:
-        f.writelines(newline)
-
-
-def num_import_int(initial):        #Call this function to import data from '.txt' file
-    with open("set.txt") as f:
-        for line in f.readlines():
-            if(line.find(initial) == 0):
-                r=line
-    begin=len(list(initial))
-    snum=r[begin:]
-    n=int(snum)
-    return n
-
-vtr_mid    = num_import_int('E_C1:')
-hoz_mid    = num_import_int('E_C2:')
-look_up_max    = num_import_int('look_up_max:')
-look_down_max  = num_import_int('look_down_max:')
-look_right_max = num_import_int('look_right_max:')
-look_left_max  = num_import_int('look_left_max:')
-turn_speed     = num_import_int('look_turn_speed:')
-
-vtr_mid_orig = vtr_mid
-hoz_mid_orig = hoz_mid
 
 def get_ram():
     try:
@@ -188,18 +158,18 @@ def colorWipe(strip, color):
 def scan():                  #Ultrasonic Scanning
     global dis_dir
     dis_dir = []
-    turn.ultra_turn(hoz_mid)   #Ultrasonic point forward
-    turn.ultra_turn(look_left_max)   #Ultrasonic point Left,prepare to scan
+    servos.ultra_turn(hoz_mid)   #Ultrasonic point forward
+    servos.ultra_turn(look_left_max)   #Ultrasonic point Left,prepare to scan
     dis_dir=['list']         #Make a mark so that the client would know it is a list
     time.sleep(0.5)          #Wait for the Ultrasonic to be in position
     cat_2=look_left_max                #Value of left-position
     GPIO.setwarnings(False)  #Or it may print warnings
     while cat_2>look_right_max:         #Scan,from left to right
-        turn.ultra_turn(cat_2)
+        servos.ultra_turn(cat_2)
         cat_2 -= 3           #This value determine the speed of scanning,the greater the faster
         new_scan_data=round(ultra.checkdist(),2)   #Get a distance of a certern direction
         dis_dir.append(str(new_scan_data))         #Put that distance value into a list,and save it as String-Type for future transmission 
-    turn.ultra_turn(hoz_mid)   #Ultrasonic point forward
+    servos.ultra_turn(hoz_mid)   #Ultrasonic point forward
     return dis_dir
 
 
@@ -221,7 +191,7 @@ def turn_right_led():        #Turn on the LED on the right
 
 def setup():                 #initialization
     motor.setup()            
-    turn.ahead()
+    servos.ahead()
     findline.setup()
 
 
@@ -278,18 +248,18 @@ def opencv_thread():         #OpenCV and FPV video
                         ultra_turn(hoz_mid_orig)
                         #print('x=%d'%X)
                     else:
-                        turn.middle()
+                        servos.middle()
                         pass
 
                     mu_t = 390-(hoz_mid-hoz_mid_orig)
                     v_mu_t = 390+(hoz_mid+hoz_mid_orig)
-                    turn.turn_ang(mu_t)
+                    servos.turn_ang(mu_t)
 
                     dis = dis_data
                     if dis < (distance_stay-0.1) :
                         led.both_off()
                         led.red()
-                        turn.turn_ang(mu_t)
+                        servos.turn_ang(mu_t)
                         motor.motor_left(status, backward,left_spd*spd_ad_u)
                         motor.motor_right(status,forward,right_spd*spd_ad_u)
                         cv2.putText(image,'Too Close',(40,80), font, 0.5,(128,128,255),1,cv2.LINE_AA)
@@ -439,8 +409,8 @@ def run():                   #Main loop
             led.green()
             print('...connected from :', addr)
             #time.sleep(1)
-            tcpCliSock.send(('SET %s'%vtr_mid+' %s'%hoz_mid+' %s'%left_spd+' %s'%right_spd+' %s'%look_up_max+' %s'%look_down_max+' %s'%turn.turn_middle).encode())
-            print('SET %s'%vtr_mid+' %s'%hoz_mid+' %s'%left_spd+' %s'%right_spd+' %s'%look_up_max+' %s'%look_down_max+' %s'%turn.turn_middle)
+            tcpCliSock.send(('SET %s'%vtr_mid+' %s'%hoz_mid+' %s'%left_spd+' %s'%right_spd+' %s'%look_up_max+' %s'%look_down_max+' %s'%servos.turn_middle).encode())
+            print('SET %s'%vtr_mid+' %s'%hoz_mid+' %s'%left_spd+' %s'%right_spd+' %s'%look_up_max+' %s'%look_down_max+' %s'%servos.turn_middle)
             break
         else:
             led.both_off()
@@ -519,37 +489,37 @@ def run():                   #Main loop
 
         elif 'EC1set' in data:                 #Camera Adjustment
             new_EC1=int((str(data))[7:])
-            turn.camera_turn(new_EC1)
-            replace_num('E_C1:',new_EC1)
+            servos.camera_turn(new_EC1)
+            config.exportConfig('E_C1', new_EC1)
 
         elif 'EC2set' in data:                 #Ultrasonic Adjustment
             new_EC2=int((str(data))[7:])
-            replace_num('E_C2:',new_EC2)
-            turn.ultra_turn(new_EC2)
+            config.exportConfig('E_C2', new_EC2)
+            servos.ultra_turn(new_EC2)
 
         elif 'EM1set' in data:                 #Motor A Speed Adjustment
             new_EM1=int((str(data))[7:])
-            replace_num('E_M1:',new_EM1)
+            config.exportConfig('E_M1', new_EM1)
 
         elif 'EM2set' in data:                 #Motor B Speed Adjustment
             new_EM2=int((str(data))[7:])
-            replace_num('E_M2:',new_EM2)
+            config.exportConfig('E_M2', new_EM2)
 
         elif 'LUMset' in data:                 #Motor A Turning Speed Adjustment
             new_ET1=int((str(data))[7:])
-            replace_num('look_up_max:',new_ET1)
-            turn.camera_turn(new_ET1)
+            config.exportConfig('look_up_max', new_ET1)
+            servos.camera_turn(new_ET1)
 
         elif 'LDMset' in data:                 #Motor B Turning Speed Adjustment
             new_ET2=int((str(data))[7:])
-            replace_num('look_down_max:',new_ET2)
-            turn.camera_turn(new_ET2)
+            config.exportConfig('look_down_max', new_ET2)
+            servos.camera_turn(new_ET2)
 
         elif 'STEERINGset' in data:            #Motor Steering center Adjustment
             new_Steering = int((str(data))[12:])
-            replace_num('turn_middle:',new_Steering)
-            turn.turn_middle = new_Steering
-            turn.middle()
+            config.exportConfig('turn_middle', new_Steering)
+            servos.turn_middle = new_Steering
+            servos.middle()
 
         elif 'stop' in data:                   #When server receive "stop" from client,car stops moving
             tcpCliSock.send('9'.encode())
@@ -580,28 +550,28 @@ def run():                   #Main loop
                 led.side_on(left_B)
                 led.side_on(right_B)
             turn_status = 0
-            turn.middle()
+            servos.middle()
         
         elif 'SteerLeft' in data:              #Turn more to the left
             if led_status == 0:
                 led.side_color_on(left_R,left_G)
             else:
                 led.side_off(left_B)
-            turn.turn_ang(turn.heading+turn_speed)
+            servos.turn_ang(servos.heading+turn_speed)
 
         elif 'SteerRight' in data:              #Turn more to the Right
             if led_status == 0:
                 led.side_color_on(right_R,right_G)
             else:
                 led.side_off(right_B)
-            turn.turn_ang(turn.heading-turn_speed)
+            servos.turn_ang(servos.heading-turn_speed)
 
         elif 'Left' in data:                   #Turn hard left
             if led_status == 0:
                 led.side_color_on(left_R,left_G)
             else:
                 led.side_off(left_B)
-            turn.left()
+            servos.left()
             turn_status=1
             tcpCliSock.send('3'.encode())
         
@@ -610,7 +580,7 @@ def run():                   #Main loop
                 led.side_color_on(right_R,right_G)
             else:
                 led.side_off(right_B)
-            turn.right()
+            servos.right()
             turn_status=2
             tcpCliSock.send('4'.encode())
         
@@ -629,30 +599,30 @@ def run():                   #Main loop
         elif 'l_up' in data:                   #Camera look up
             if vtr_mid< look_up_max:
                 vtr_mid+=turn_speed
-            turn.camera_turn(vtr_mid)
+            servos.camera_turn(vtr_mid)
             tcpCliSock.send('5'.encode())
 
         elif 'l_do' in data:                   #Camera look down
             if vtr_mid> look_down_max:
                 vtr_mid-=turn_speed
-            turn.camera_turn(vtr_mid)
+            servos.camera_turn(vtr_mid)
             print(vtr_mid)
             tcpCliSock.send('6'.encode())
 
         elif 'l_le' in data:                   #Camera look left
             if hoz_mid< look_left_max:
                 hoz_mid+=turn_speed
-            turn.ultra_turn(hoz_mid)
+            servos.ultra_turn(hoz_mid)
             tcpCliSock.send('7'.encode())
 
         elif 'l_ri' in data:                   #Camera look right
             if hoz_mid> look_right_max:
                 hoz_mid-=turn_speed
-            turn.ultra_turn(hoz_mid)
+            servos.ultra_turn(hoz_mid)
             tcpCliSock.send('8'.encode())
 
         elif 'ahead' in data:                  #Camera look ahead
-            turn.ahead()
+            servos.ahead()
             vtr_mid = vtr_mid_orig
             hoz_mid = hoz_mid_orig
 
@@ -666,11 +636,11 @@ def run():                   #Main loop
             tcpCliSock.send('auto_status_off'.encode())
             motor.motorStop()
             led.both_off()
-            turn.middle()
+            servos.middle()
             time.sleep(0.1)
             motor.motorStop()
             led.both_off()
-            turn.middle()
+            servos.middle()
         
         elif 'auto' in data:                   #When server receive "auto" from client,start Auto Mode
             if auto_status == 0:
@@ -715,13 +685,13 @@ def cleanup():
 if __name__ == '__main__':
     print("robot server starting")
     atexit.register(cleanup)
-    vtr_mid    = num_import_int('E_C1:')
-    hoz_mid    = num_import_int('E_C2:')
-    look_up_max    = num_import_int('look_up_max:')
-    look_down_max  = num_import_int('look_down_max:')
-    look_right_max = num_import_int('look_right_max:')
-    look_left_max  = num_import_int('look_left_max:')
-    turn_speed     = num_import_int('look_turn_speed:')
+    vtr_mid = config.importConfigInt('E_C1')
+    hoz_mid = config.importConfigInt('E_C2')
+    look_up_max = config.importConfigInt('look_up_max')
+    look_down_max = config.importConfigInt('look_down_max')
+    look_right_max = config.importConfigInt('look_right_max')
+    look_left_max = config.importConfigInt('look_left_max')
+    turn_speed = config.importConfigInt('look_turn_speed')
     vtr_mid_orig = vtr_mid
     hoz_mid_orig = hoz_mid
 

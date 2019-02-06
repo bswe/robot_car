@@ -3,32 +3,26 @@
 # Description : line tracking 
 # Website     : www.adeept.com
 # E-mail      : support@adeept.com
-# Author      : William
-# Date        : 2018/10/12
+# Author      : wcb
+# Date        : 1/24/2019
+
+import sys
+sys.path.insert(0, "../common")
+import config
 import RPi.GPIO as GPIO
 import time
 import motor
-import turn
+import servos
 import led
-
-def num_import_int(initial):        #Call this function to import data from '.txt' file
-    with open("set.txt") as f:
-        for line in f.readlines():
-            if(line.find(initial) == 0):
-                r=line
-    begin=len(list(initial))
-    snum=r[begin:]
-    n=int(snum)
-    return n
 
 status     = 1          #Motor rotation
 forward    = 1          #Motor forward
 backward   = 0          #Motor backward
 
-left_spd   = num_import_int('E_M1:')         #Speed of the car
-right_spd  = num_import_int('E_M2:')         #Speed of the car
-left       = num_import_int('E_T1:')         #Motor Left
-right      = num_import_int('E_T2:')         #Motor Right
+left_spd   = config.importConfigInt('E_M1')         #Speed of the car
+right_spd  = config.importConfigInt('E_M2')         #Speed of the car
+left       = config.importConfigInt('E_T1')         #Motor Left
+right      = config.importConfigInt('E_T2')         #Motor Right
 
 line_pin_right = 35
 line_pin_middle = 36
@@ -64,25 +58,25 @@ def run():
     status_middle = GPIO.input(line_pin_middle)
     status_left = GPIO.input(line_pin_left)
     if status_left == 1:
-        turn.left()
+        servos.left()
         led.both_off()
         led.side_on(left_R)
         motor.motor_left(status, forward,left_spd*spd_ad_2)
         motor.motor_right(status,backward,right_spd*spd_ad_2)
     elif status_middle == 1:
-        turn.middle()
+        servos.middle()
         led.both_off()
         led.yellow()
         motor.motor_left(status, forward,left_spd*spd_ad_1)
         motor.motor_right(status,backward,right_spd*spd_ad_1)
     elif status_right == 1:
-        turn.right()
+        servos.right()
         led.both_off()
         led.side_on(right_R)
         motor.motor_left(status, forward,left_spd*spd_ad_2)
         motor.motor_right(status,backward,right_spd*spd_ad_2)
     else:
-        turn.middle()
+        servos.middle()
         led.both_off()
         led.cyan()
         motor.motor_left(status, backward,left_spd)

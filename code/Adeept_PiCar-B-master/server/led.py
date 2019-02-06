@@ -5,6 +5,7 @@
 # E-mail      : support@adeept.com
 # Author      : William
 # Date        : 2018/10/12
+
 import RPi.GPIO as GPIO
 import time
 

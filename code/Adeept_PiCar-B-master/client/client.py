@@ -204,29 +204,6 @@ def find_line(event):            #Line follow mode
         tcpClicSock.send(('Stop').encode())
 
 
-def replace_num(initial, new_num):   #Call this function to replace data in '.txt' file
-    newline=""
-    str_num=str(new_num)
-    with open("IP.txt","r") as f:
-        for line in f.readlines():
-            if(line.find(initial) == 0):
-                line = initial+"%s" %(str_num)
-            newline += line
-    with open("IP.txt", "w") as f:
-        f.writelines(newline)    #Call this function to replace data in '.txt' file
-
-
-def num_import(initial):            #Call this function to import data from '.txt' file
-    with open("IP.txt") as f:
-        for line in f.readlines():
-            if(line.find(initial) == 0):
-                r=line
-    begin=len(list(initial))
-    snum=r[begin:]
-    n=snum
-    return n    
-
-
 def lights_ON(event):               #Turn on the LEDs
     if led_status == 0:
         tcpClicSock.send(('lightsON').encode())
@@ -356,8 +333,10 @@ def socket_connect():     #Call this function to connect with the robot server
     
     ip_adr=ip_entry.get()    #Get the IP address from Entry
 
-    if ip_adr == '':         #If no input IP address in Entry, import a default IP
-        ip_adr=num_import('IP:')
+    if ip_adr == '':         #If no input IP address in Entry, try to import a default IP
+        ip_adr = config.importConfig('IP')
+        if ip_adr == None:
+            ip_adr = "0.0.0.0"
         l_ip_4.config(text='Connecting')
         l_ip_4.config(bg='#FF8F00')
         l_ip_5.config(text='Default:%s'%ip_adr)
@@ -367,16 +346,17 @@ def socket_connect():     #Call this function to connect with the robot server
         try:
             print("Connecting to server @ %s:%d..." %(ip_adr, SERVER_PORT))
             address = (ip_adr, SERVER_PORT)
-            tcpClicSock = socket(AF_INET, SOCK_STREAM) #Set connection value for socket
-            tcpClicSock.connect(address)               #Connection with the server
+            s = socket(AF_INET, SOCK_STREAM) #Set connection value for socket
+            s.connect(address)               #Connection with the server
         
             print("robot Connected")
+            tcpClicSock = s
         
+            config.exportConfig('IP', ip_adr)
             l_ip_5.config(text='IP:%s'%ip_adr)
             l_ip_4.config(text='Connected')
             l_ip_4.config(bg='#558B2F')
 
-            replace_num('IP:',ip_adr)
             ip_entry.config(state='disabled')     #Disable the Entry
             Btn14.config(state='disabled')        #Disable the Entry
                     
@@ -392,7 +372,8 @@ def socket_connect():     #Call this function to connect with the robot server
             ipaddr=tcpClicSock.getsockname()[0]
             break
 
-        except Exception:
+        except Exception as e:
+            print(e)
             print("Failed to connect to server!")
             print('Retrying %d/5 time(s)'%i)
             l_ip_4.config(text='Retrying %d/5 time(s)'%i)

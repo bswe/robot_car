@@ -5,20 +5,14 @@
 # E-mail      : support@adeept.com
 # Author      : William
 # Date        : 2018/10/12
+
+import sys
+sys.path.insert(0, "../common")
+import config
 import RPi.GPIO as GPIO
 import time
 import motor
-import turn,led
-
-def num_import_int(initial):       #Call this function to import data from '.txt' file
-    with open("set.txt") as f:
-        for line in f.readlines():
-            if(line.find(initial) == 0):
-                r=line
-    begin=len(list(initial))
-    snum=r[begin:]
-    n=int(snum)
-    return n
+import servos, led
 
 #Set GPIO for Leds
 left_R = 29
@@ -30,10 +24,10 @@ right_G = 18
 right_B = 15
 
 #Set for motors
-left_spd   = num_import_int('E_M1:')         #Speed of the car
-right_spd  = num_import_int('E_M2:')         #Speed of the car
-left       = num_import_int('E_T1:')         #Motor Left
-right      = num_import_int('E_T2:')         #Motor Right
+left_spd   = config.importConfigInt('E_M1')         #Speed of the car
+right_spd  = config.importConfigInt('E_M2')         #Speed of the car
+left       = config.importConfigInt('E_T1')         #Motor Left
+right      = config.importConfigInt('E_T2')         #Motor Right
 pwm0     = 0
 pwm1     = 1
 status   = 1    
@@ -69,12 +63,12 @@ def destroy():        #motor stops when this program exit
 def loop(distance_stay,distance_range):   #Tracking with Ultrasonic
     motor.setup()
     led.setup()
-    turn.ahead()
-    turn.middle()
+    servos.ahead()
+    servos.middle()
     dis = checkdist()
     if dis < distance_range:             #Check if the target is in diatance range
         if dis > (distance_stay+0.1) :   #If the target is in distance range and out of distance stay, then move forward to track
-            turn.ahead()
+            servos.ahead()
             moving_time = (dis-distance_stay)/0.38
             if moving_time > 1:
                 moving_time = 1
