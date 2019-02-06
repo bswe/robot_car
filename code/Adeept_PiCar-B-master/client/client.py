@@ -229,10 +229,13 @@ def voice_input():
     with sr.Microphone() as source:
         r.adjust_for_ambient_noise(source)
         #r.record(source, duration=2)
-        print("Say something!")
-        l_VIN.update_idletasks()      # cause widgets in GUI to update and display properly
+        l_VIN.config(text='Say something!')
+        BtnVIN.config(fg='#0277BD', bg='#BBDEFB')
+        l_VIN.update_idletasks()      # cause widgets in GUI to update now and display properly
+        print("listening!")
         audio = r.listen(source)
     try:
+        print("calling sphinx with audio")
         a2t=r.recognize_sphinx(audio, keyword_entries=[('forward', 1.0),
                                                        ('backward', 1.0),
                                                        ('left', 1.0),
@@ -252,8 +255,6 @@ def voice_input():
 
 
 def voice_command(event):
-    l_VIN.config(text='Say something!')
-    BtnVIN.config(fg='#0277BD', bg='#BBDEFB')
     v_command=voice_input()
     l_VIN.config(text='%s'%v_command)
     BtnVIN.config(fg=TEXT_COLOR, bg=BUTTON_COLOR)

@@ -378,11 +378,37 @@ def dis_scan_thread():       #Get Ultrasonic scan distance
 def ap_thread():             #Set up an AP-Hotspot
     os.system("sudo create_ap wlan0 eth0 AdeeptCar 12345678")
 
+threadStatus = 0
+def blinkHeadlights():
+    global threadStatus
+
+    threadStatus = 1
+    led.both_off()
+    while threadStatus != 2:
+        led.side_on(led.left_R)
+        for i in range(10):
+            time.sleep(.1)
+            if threadStatus == 2:
+                threadStatus = 3
+                return
+        led.side_off(led.left_R)
+        led.side_on(led.right_R)
+        for i in range(10):
+            time.sleep(.1)
+            if threadStatus == 2:
+                threadStatus = 3
+                return
+        led.side_off(led.right_R)
+    threadStatus = 3
+
 
 def run():                   #Main loop
-    global hoz_mid,vtr_mid,ip_con,led_status,auto_status,opencv_mode,findline_mode,speech_mode, \
-           auto_mode,data,addr,footage_socket,ap_status,turn_status,wifi_status
+    global hoz_mid, vtr_mid, ip_con, led_status, auto_status, opencv_mode, findline_mode, speech_mode, \
+           auto_mode, data,addr, footage_socket, ap_status, turn_status, wifi_status, threadStatus
     led.setup()
+    ledBlinkThread = threading.Thread(target=blinkHeadlights)      
+    ledBlinkThread.setDaemon(True)                             
+    ledBlinkThread.start()                                     #Thread starts
     while True:              #Connection
         try:
             s =socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
@@ -403,8 +429,10 @@ def run():                   #Main loop
             
         if wifi_status == 1:
             print('waiting for connection...')
-            led.red()
-            tcpCliSock, addr = tcpSerSock.accept()#Determine whether to connect
+            tcpCliSock, addr = tcpSerSock.accept()       #Determine whether to connect
+            while threadStatus != 3:
+                threadStatus = 2
+                time.sleep(.1)
             led.both_off()
             led.green()
             print('...connected from :', addr)

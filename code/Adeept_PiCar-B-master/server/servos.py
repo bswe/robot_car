@@ -6,13 +6,13 @@
 # Author      : wcb
 # Date        : 1/24/2019
 
+from __future__ import division
+
 import sys
 sys.path.insert(0, "../common")
 import config
 
-from __future__ import division
 import time
-
 import Adafruit_PCA9685
 
 #import the settings for servos

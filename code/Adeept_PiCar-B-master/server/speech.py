@@ -11,7 +11,7 @@ sys.path.insert(0, "../common")
 import config
 import speech_recognition as sr
 import motor
-import turn,time
+import servos, time
 import led
 import RPi.GPIO as GPIO
 
@@ -93,14 +93,14 @@ def run():
         motor.motorStop()
 
     elif 'left' in v_command:
-        turn.left()
+        servos.left()
         motor.motor_left(status, forward,left_spd*spd_ad_2)
         motor.motor_right(status,backward,right_spd*spd_ad_2)
         time.sleep(2)
         motor.motorStop()
 
     elif "right" in v_command:
-        turn.right()
+        servos.right()
         motor.motor_left(status, forward,left_spd*spd_ad_2)
         motor.motor_right(status,backward,right_spd*spd_ad_2)
         time.sleep(2)
