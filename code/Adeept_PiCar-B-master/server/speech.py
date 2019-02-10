@@ -81,28 +81,28 @@ def run():
     #print('pre')
 
     if 'forward' in v_command:
-        motor.motor_left(status, forward,left_spd*spd_ad_2)
-        motor.motor_right(status,backward,right_spd*spd_ad_2)
+        motor.motorLeft(status, forward,left_spd*spd_ad_2)
+        motor.motorRight(status,backward,right_spd*spd_ad_2)
         time.sleep(2)
         motor.motorStop()
 
     elif 'backward' in v_command:
-        motor.motor_left(status, backward,left_spd)
-        motor.motor_right(status,forward,right_spd)
+        motor.motorLeft(status, backward,left_spd)
+        motor.motorRight(status,forward,right_spd)
         time.sleep(2)
         motor.motorStop()
 
     elif 'left' in v_command:
         servos.left()
-        motor.motor_left(status, forward,left_spd*spd_ad_2)
-        motor.motor_right(status,backward,right_spd*spd_ad_2)
+        motor.motorLeft(status, forward,left_spd*spd_ad_2)
+        motor.motorRight(status,backward,right_spd*spd_ad_2)
         time.sleep(2)
         motor.motorStop()
 
     elif "right" in v_command:
         servos.right()
-        motor.motor_left(status, forward,left_spd*spd_ad_2)
-        motor.motor_right(status,backward,right_spd*spd_ad_2)
+        motor.motorLeft(status, forward,left_spd*spd_ad_2)
+        motor.motorRight(status,backward,right_spd*spd_ad_2)
         time.sleep(2)
         motor.motorStop()
 

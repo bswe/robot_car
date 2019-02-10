@@ -53,7 +53,7 @@ right_R = 19
 right_G = 21
 right_B = 22
 
-spd_ad     = 1          #Speed Adjustment
+spd_adj     = 1          #Speed Adjustment
 pwm0       = 0          #Camera direction 
 pwm1       = 1          #Ultrasonic direction
 status     = 1          #Motor rotation
@@ -260,12 +260,12 @@ def opencv_thread():         #OpenCV and FPV video
                         led.both_off()
                         led.red()
                         servos.turn_ang(mu_t)
-                        motor.motor_left(status, backward,left_spd*spd_ad_u)
-                        motor.motor_right(status,forward,right_spd*spd_ad_u)
+                        motor.motorLeft(status, backward,left_spd*spd_ad_u)
+                        motor.motorRight(status,forward,right_spd*spd_ad_u)
                         cv2.putText(image,'Too Close',(40,80), font, 0.5,(128,128,255),1,cv2.LINE_AA)
                     elif dis > (distance_stay+0.1):
-                        motor.motor_left(status, forward,left_spd*spd_ad_2)
-                        motor.motor_right(status,backward,right_spd*spd_ad_2)
+                        motor.motorLeft(status, forward,left_spd*spd_ad_2)
+                        motor.motorRight(status,backward,right_spd*spd_ad_2)
                         cv2.putText(image,'OpenCV Tracking',(40,80), font, 0.5,(128,255,128),1,cv2.LINE_AA)
                     else:
                         motor.motorStop()
@@ -504,8 +504,9 @@ def run():                   #Main loop
             sys.exit()
 
         elif 'spdset' in data:
-            global spd_ad
-            spd_ad=float((str(data))[7:])      #Speed Adjustment
+            global spd_adj
+            spd_adj=float((str(data))[7:])      #Speed Adjustment
+            print("speed adjustment set to %s" %str(spd_adj))
 
         elif 'scan' in data:
             dis_can=scan()                     #Start Scanning
@@ -614,14 +615,14 @@ def run():                   #Main loop
         
         elif 'backward' in data:               #When server receive "backward" from client,car moves backward
             tcpCliSock.send('2'.encode())
-            motor.motor_left(status, backward, left_spd*spd_ad)
-            motor.motor_right(status, forward, right_spd*spd_ad)
+            motor.motorLeft(status, backward, left_spd*spd_adj)
+            motor.motorRight(status, forward, right_spd*spd_adj)
             colorWipe(strip, Color(255,0,0))
 
         elif 'forward' in data:                #When server receive "forward" from client,car moves forward
             tcpCliSock.send('1'.encode())
-            motor.motor_left(status, forward,left_spd*spd_ad)
-            motor.motor_right(status,backward,right_spd*spd_ad)
+            motor.motorLeft(status, forward,left_spd*spd_adj)
+            motor.motorRight(status,backward,right_spd*spd_adj)
             colorWipe(strip, Color(0,0,255))
 
         elif 'l_up' in data:                   #Camera look up

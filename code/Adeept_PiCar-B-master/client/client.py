@@ -41,6 +41,7 @@ tcpClicSock = None  #for robot server socket connection
 ip_stu = 1          #Shows connection status
 
 ip_entry = None
+l_ip_2 = None
 l_ip_4 = None
 l_ip_5 = None
 Btn5 = None
@@ -236,16 +237,16 @@ def voice_input():
         audio = r.listen(source)
     try:
         print("calling sphinx with audio")
-        a2t=r.recognize_sphinx(audio, keyword_entries=[('forward', 1.0),
+        a2t=r.recognize_sphinx(audio, keyword_entries=[('forward', .20),
                                                        ('backward', 1.0),
-                                                       ('left', 1.0),
-                                                       ('right', 1.0),
+                                                       ('left turn', 1.0),
+                                                       ('right turn', 1.0),
                                                        ('stop', 1.0),
-                                                       ('find line', 0.95),
+                                                       ('find line', 0.50),  # find line
                                                        ('follow', 1),
-                                                       ('lights on', 1),
-                                                       ('lights off', 1)])
-        print("Sphinx thinks you said " + a2t)
+                                                       ('head lights', 1)])      
+        print("sphinx retuned: %s" %str(a2t))
+        print("Sphinx thinks you said " + a2t.split()[0])
         return a2t
     except sr.UnknownValueError:
         print("Sphinx could not understand audio")
@@ -270,14 +271,15 @@ def voice_command(event):
         tcpClicSock.send(('Right').encode())
     elif v_command.startswith('stop'):
         tcpClicSock.send(('Stop').encode())
-    elif v_command.startswith('find line'):
+    elif v_command.startswith('find'):
         tcpClicSock.send(('findline').encode())
     elif v_command.startswith('follow'):
         tcpClicSock.send(('auto').encode())
-    elif v_command.startswith('lights on'):
-        tcpClicSock.send(('lightsON').encode())
-    elif v_command.startswith('lights off'):
-        tcpClicSock.send(('lightsOFF').encode())
+    elif v_command.startswith('head'):
+        if led_status == 0:
+            tcpClicSock.send(('lightsON').encode())
+        else:
+            tcpClicSock.send(('lightsOFF').encode())
     else:
         pass
 
@@ -548,8 +550,8 @@ def code_receive():     #A function for data receiving
 
 
 def init():
-    global ip_entry, l_ip_4, l_ip_5, Btn14, Btn5, BtnFL, BtnLED, BtnOCV, var_x_scan, var_spd, Steering, \
-           BtnSR3, l_ip, BtnIP, ipaddr, E_C1, E_C2, E_M1, E_M2, E_T1, E_T2, l_VIN, BtnVIN
+    global ip_entry, l_ip_2, l_ip_4, l_ip_5, Btn14, Btn5, BtnFL, BtnLED, BtnOCV, var_x_scan, var_spd, \
+           Steering, BtnSR3, l_ip, BtnIP, ipaddr, E_C1, E_C2, E_M1, E_M2, E_T1, E_T2, l_VIN, BtnVIN
 
     window.title('Adeept')              #Main window title
     window.geometry('917x630')          #Main window size, middle of the English letter x.
@@ -660,8 +662,8 @@ def init():
     can_tex_13=can_scan.create_text((27,54), text='%sm'%round((x_range*0.75),2), fill='#aeea00')  #Create a text on canvas
 
     s1 = tk.Scale(window, label="               < Slow   Speed Adjustment   Fast >",
-    from_=0.4, to=1, orient=tk.HORIZONTAL, length=400,
-    showvalue=0.1, tickinterval=0.1, resolution=0.2, variable=var_spd, fg=TEXT_COLOR, bg=BACKGROUND_COLOR, highlightthickness=0)
+    from_=0.9, to=1, orient=tk.HORIZONTAL, length=400,
+    showvalue=0.01, tickinterval=0.01, resolution=0.01, variable=var_spd, fg=TEXT_COLOR, bg=BACKGROUND_COLOR, highlightthickness=0)
     if "linux" in sys.platform:
         s1.place(x=200, y=100)          #Define a Scale and put it in position on linux platform
     else:

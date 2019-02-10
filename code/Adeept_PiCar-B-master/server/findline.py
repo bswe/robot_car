@@ -61,26 +61,26 @@ def run():
         servos.left()
         led.both_off()
         led.side_on(left_R)
-        motor.motor_left(status, forward,left_spd*spd_ad_2)
-        motor.motor_right(status,backward,right_spd*spd_ad_2)
+        motor.motorLeft(status, forward,left_spd*spd_ad_2)
+        motor.motorRight(status,backward,right_spd*spd_ad_2)
     elif status_middle == 1:
         servos.middle()
         led.both_off()
         led.yellow()
-        motor.motor_left(status, forward,left_spd*spd_ad_1)
-        motor.motor_right(status,backward,right_spd*spd_ad_1)
+        motor.motorLeft(status, forward,left_spd*spd_ad_1)
+        motor.motorRight(status,backward,right_spd*spd_ad_1)
     elif status_right == 1:
         servos.right()
         led.both_off()
         led.side_on(right_R)
-        motor.motor_left(status, forward,left_spd*spd_ad_2)
-        motor.motor_right(status,backward,right_spd*spd_ad_2)
+        motor.motorLeft(status, forward,left_spd*spd_ad_2)
+        motor.motorRight(status,backward,right_spd*spd_ad_2)
     else:
         servos.middle()
         led.both_off()
         led.cyan()
-        motor.motor_left(status, backward,left_spd)
-        motor.motor_right(status,forward,right_spd)
+        motor.motorLeft(status, backward,left_spd)
+        motor.motorRight(status,forward,right_spd)
     pass
 
 try:

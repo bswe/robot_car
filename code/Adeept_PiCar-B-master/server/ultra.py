@@ -75,8 +75,8 @@ def loop(distance_stay,distance_range):   #Tracking with Ultrasonic
             print('mf')
             led.both_off()
             led.cyan()
-            motor.motor_left(status, backward,left_spd*spd_ad_u)
-            motor.motor_right(status,forward,right_spd*spd_ad_u)
+            motor.motorLeft(status, backward,left_spd*spd_ad_u)
+            motor.motorRight(status,forward,right_spd*spd_ad_u)
             time.sleep(moving_time)
             motor.motorStop()
         elif dis < (distance_stay-0.1) : #Check if the target is too close, if so, the car move back to keep distance at distance_stay
@@ -84,8 +84,8 @@ def loop(distance_stay,distance_range):   #Tracking with Ultrasonic
             print('mb')
             led.both_off()
             led.pink()
-            motor.motor_left(status, forward,left_spd*spd_ad_u)
-            motor.motor_right(status,backward,right_spd*spd_ad_u)
+            motor.motorLeft(status, forward,left_spd*spd_ad_u)
+            motor.motorRight(status,backward,right_spd*spd_ad_u)
             time.sleep(moving_time)
             motor.motorStop()
         else:                            #If the target is at distance, then the car stay still
