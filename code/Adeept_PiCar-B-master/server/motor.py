@@ -26,10 +26,11 @@ STOP = 0
 pwm_A = 0
 pwm_B = 0
 
+setupCalled = False
 
-def setup():   #Motor initialization
-    global pwm_A, pwm_B
-    GPIO.setwarnings(False)
+def setup():     #Motor initialization
+    global pwm_A, pwm_B, setupCalled
+    GPIO.setwarnings(True)
     GPIO.setmode(GPIO.BOARD)
     GPIO.setup(MOTOR_A_EN, GPIO.OUT)
     GPIO.setup(MOTOR_B_EN, GPIO.OUT)
@@ -37,14 +38,22 @@ def setup():   #Motor initialization
     GPIO.setup(MOTOR_A_PIN2, GPIO.OUT)
     GPIO.setup(MOTOR_B_PIN1, GPIO.OUT)
     GPIO.setup(MOTOR_B_PIN2, GPIO.OUT)
+    #if setupCalled:
+    #    return
     try:
+        print("creating motor A PWM, pwm_A=%s" %str(pwm_A))
         pwm_A = GPIO.PWM(MOTOR_A_EN, 1000)
+        print("creating motor B PWM, pwm_B=%s" %str(pwm_B))
         pwm_B = GPIO.PWM(MOTOR_B_EN, 1000)
-    except:
-        pass
-
+    except Exception as e:
+        print(e)
+        #pass
+    print("pwm_A=%s" %str(pwm_A))
+    print("pwm_B=%s" %str(pwm_B))
+    setupCalled = True
 
 def motorStop():#Motor stops
+    pass
     GPIO.output(MOTOR_A_PIN1, GPIO.LOW)
     GPIO.output(MOTOR_A_PIN2, GPIO.LOW)
     GPIO.output(MOTOR_B_PIN1, GPIO.LOW)

@@ -41,7 +41,7 @@ spd_ad_2 = 1
 v_command=''
 
 def setup():
-    GPIO.setwarnings(False)
+    GPIO.setwarnings(True)
     try:
         motor.setup()
     except:

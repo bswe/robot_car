@@ -163,7 +163,7 @@ def scan():                  #Ultrasonic Scanning
     dis_dir=['list']         #Make a mark so that the client would know it is a list
     time.sleep(0.5)          #Wait for the Ultrasonic to be in position
     cat_2=look_left_max                #Value of left-position
-    GPIO.setwarnings(False)  #Or it may print warnings
+    GPIO.setwarnings(True)  #Or it may print warnings
     while cat_2>look_right_max:         #Scan,from left to right
         servos.ultra_turn(cat_2)
         cat_2 -= 3           #This value determine the speed of scanning,the greater the faster
@@ -190,6 +190,7 @@ def turn_right_led():        #Turn on the LED on the right
 
 
 def setup():                 #initialization
+    led.setup()
     motor.setup()            
     servos.ahead()
     findline.setup()
@@ -197,8 +198,8 @@ def setup():                 #initialization
 
 def destroy():               #Clean up
     GPIO.cleanup()
-    connection.close()
-    client_socket.close()
+    #connection.close()
+    #client_socket.close()
 
 def opencv_thread():         #OpenCV and FPV video
     global hoz_mid_orig,vtr_mid_orig
@@ -376,39 +377,41 @@ def dis_scan_thread():       #Get Ultrasonic scan distance
 
 
 def ap_thread():             #Set up an AP-Hotspot
+    # why is this a thread???? It simply calls os.system and returns
     os.system("sudo create_ap wlan0 eth0 AdeeptCar 12345678")
 
-threadStatus = 0
-def blinkHeadlights():
-    global threadStatus
+blinkThreadStatus = 0
+BLINK_THREAD_RUNNING = 1
+BLINK_THREAD_STOP = 2
+BLINK_THREAD_STOPPED = 3
 
-    threadStatus = 1
+def blinkHeadlights():
+    global blinkThreadStatus
+
+    blinkThreadStatus = BLINK_THREAD_RUNNING
     led.both_off()
-    while threadStatus != 2:
+    while blinkThreadStatus != BLINK_THREAD_STOP:
         led.side_on(led.left_R)
         for i in range(10):
             time.sleep(.1)
-            if threadStatus == 2:
-                threadStatus = 3
+            if blinkThreadStatus == BLINK_THREAD_STOP:
+                blinkThreadStatus = BLINK_THREAD_STOPPED
                 return
         led.side_off(led.left_R)
         led.side_on(led.right_R)
         for i in range(10):
             time.sleep(.1)
-            if threadStatus == 2:
-                threadStatus = 3
+            if blinkThreadStatus == BLINK_THREAD_STOP:
+                blinkThreadStatus = BLINK_THREAD_STOPPED
                 return
         led.side_off(led.right_R)
-    threadStatus = 3
+    blinkThreadStatus = BLINK_THREAD_STOPPED
 
 
 def run():                   #Main loop
     global hoz_mid, vtr_mid, ip_con, led_status, auto_status, opencv_mode, findline_mode, speech_mode, \
-           auto_mode, data,addr, footage_socket, ap_status, turn_status, wifi_status, threadStatus
-    led.setup()
-    ledBlinkThread = threading.Thread(target=blinkHeadlights)      
-    ledBlinkThread.setDaemon(True)                             
-    ledBlinkThread.start()                                     #Thread starts
+           auto_mode, data,addr, footage_socket, ap_status, turn_status, wifi_status, blinkThreadStatus
+    
     while True:              #Connection
         try:
             s =socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
@@ -419,7 +422,7 @@ def run():                   #Main loop
             wifi_status=1
         except:
             if ap_status == 0:
-                ap_threading=threading.Thread(target=ap_thread)   #Define a thread for data receiving
+                ap_threading=threading.Thread(target=ap_thread)   #Define a thread for wifi hot spot
                 ap_threading.setDaemon(True)                      #True means it is a front thread,it would close when the mainloop() closes
                 ap_threading.start()                                  #Thread starts
                 led.both_off()
@@ -428,10 +431,14 @@ def run():                   #Main loop
                 wifi_status = 0
             
         if wifi_status == 1:
+            # blink headlights to indicate SW is running and waiting for client
+            ledBlinkThread = threading.Thread(target=blinkHeadlights)      
+            ledBlinkThread.setDaemon(True)                             
+            ledBlinkThread.start()                                     #Thread starts
             print('waiting for connection...')
             tcpCliSock, addr = tcpSerSock.accept()       #Determine whether to connect
-            while threadStatus != 3:
-                threadStatus = 2
+            while blinkThreadStatus != BLINK_THREAD_STOPPED:
+                blinkThreadStatus = BLINK_THREAD_STOP
                 time.sleep(.1)
             led.both_off()
             led.green()
@@ -498,9 +505,9 @@ def run():                   #Main loop
         elif 'quit' in data:
             led.both_off()
             colorWipe(strip, Color(0,0,0))
-            camera=picamera.PiCamera()
-            camera.close()
+            #camera=picamera.PiCamera()
             destroy()
+            camera.close()
             sys.exit()
 
         elif 'spdset' in data:
@@ -713,7 +720,7 @@ def cleanup():
 
 if __name__ == '__main__':
     print("robot server starting")
-    atexit.register(cleanup)
+    #atexit.register(cleanup)
     vtr_mid = config.importConfigInt('E_C1')
     hoz_mid = config.importConfigInt('E_C2')
     look_up_max = config.importConfigInt('look_up_max')
@@ -777,6 +784,7 @@ if __name__ == '__main__':
             time.sleep(5)
             print('shutdown')
         colorWipe(strip, Color(0,0,0))
-        camera=picamera.PiCamera()
+        #camera=picamera.PiCamera()
         camera.close()
+        led.both_off()
         destroy()

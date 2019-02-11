@@ -30,7 +30,7 @@ def both_on():
     GPIO.output(right_B, on)
 
 def setup():#initialization
-    GPIO.setwarnings(False)
+    GPIO.setwarnings(True)
     GPIO.setmode(GPIO.BOARD)
     GPIO.setup(left_R, GPIO.OUT)
     GPIO.setup(left_G, GPIO.OUT)

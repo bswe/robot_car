@@ -43,7 +43,7 @@ spd_ad_1 = 1
 spd_ad_2 = 1
 
 def setup():
-    GPIO.setwarnings(False)
+    GPIO.setwarnings(True)
     GPIO.setmode(GPIO.BOARD)
     GPIO.setup(line_pin_right,GPIO.IN)
     GPIO.setup(line_pin_middle,GPIO.IN)
