@@ -629,16 +629,13 @@ def init():
     Steering = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
     Steering.place(x=785, y=585)                             #Define a Entry and put it in position
 
-    BtnLED = tk.Button(window, width=BTN_WIDTH_2, text='Lights ON', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    BtnLED.place(x=300, y=420)
-
-    BtnOCV = tk.Button(window, width=BTN_WIDTH_2, text='OpenCV', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge', command=call_opencv)
+    BtnOCV = tk.Button(window, width=BTN_WIDTH_1, text='OpenCV', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge', command=call_opencv)
     BtnOCV.place(x=30, y=420)
 
-    BtnFL = tk.Button(window, width=BTN_WIDTH_2, text='Find Line', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    BtnFL.place(x=165, y=420)
+    BtnFL = tk.Button(window, width=BTN_WIDTH_1, text='Find Line', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnFL.place(x=105, y=420)
 
-    BtnSR3 = tk.Button(window, width=BTN_WIDTH_2, text='Sphinx SR', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge', command=call_SR3)
+    BtnSR3 = tk.Button(window, width=BTN_WIDTH_1, text='Sphinx SR', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge', command=call_SR3)
     BtnSR3.place(x=300, y=495)
 
     E_C1.insert ( 0, 'Default:425' ) 
@@ -661,15 +658,12 @@ def init():
     can_tex_12=can_scan.create_text((27,116), text='%sm'%round((x_range/2),2), fill='#aeea00')     #Create a text on canvas
     can_tex_13=can_scan.create_text((27,54), text='%sm'%round((x_range*0.75),2), fill='#aeea00')  #Create a text on canvas
 
-    s1 = tk.Scale(window, label="               < Slow   Speed Adjustment   Fast >",
+    s1 = tk.Scale(window, label="               < SLOW  Speed Adjustment   FAST >",
     from_=0.9, to=1, orient=tk.HORIZONTAL, length=400,
     showvalue=0.01, tickinterval=0.01, resolution=0.01, variable=var_spd, fg=TEXT_COLOR, bg=BACKGROUND_COLOR, highlightthickness=0)
-    if "linux" in sys.platform:
-        s1.place(x=200, y=100)          #Define a Scale and put it in position on linux platform
-    else:
-        s1.place(x=200, y=100)          #Define a Scale and put it in position on windows platform
+    s1.place(x=200, y=100)          #Define a Scale and put it in position on linux platform
 
-    s3 = tk.Scale(window, label="< Near   Scan Range Adjustment(Meter(s))   Far >",
+    s3 = tk.Scale(window, label="< NEAR  Scan Range Adjustment(Meters) FAR >",
     from_=1, to=5, orient=tk.HORIZONTAL, length=300,
     showvalue=1, tickinterval=1, resolution=1, variable=var_x_scan, fg=TEXT_COLOR, bg=BACKGROUND_COLOR, highlightthickness=0)
     s3.place(x=30, y=320)    
@@ -686,7 +680,7 @@ def init():
     l_ip_5=tk.Label(window, width=IP_WIDTH, text='Use default IP', fg=TEXT_COLOR, bg=BUTTON_COLOR)
     l_ip_5.place(x=637, y=145)                         #Define a Label and put it in position
 
-    l_inter=tk.Label(window, width=INFO_WIDTH, text='< Car Adjustment              Camera Adjustment>\nW:Move Forward                 Look Up:I\nS:Move Backward            Look Down:K\nA:Turn Left                          Turn Left:J\nD:Turn Right                      Turn Right:L\nZ:Auto Mode On          Look Forward:H\nC:Auto Mode Off      Ultrasdonic Scan:X' ,
+    l_inter=tk.Label(window, width=INFO_WIDTH, text='<- CAR ADJUSTMENT        CAMERA ADJUSTMENT ->\nW:Move Forward                 Look Up:I\nS:Move Backward            Look Down:K\nA:Turn Left                          Turn Left:J\nD:Turn Right                      Turn Right:L\nZ:Auto Mode On          Look Forward:H\nC:Auto Mode Off      Ultrasdonic Scan:X' ,
     fg='#212121', bg='#90a4ae')
     l_inter.place(x=INFO_X, y=180)                    #Define a Label and put it in position
 
@@ -707,46 +701,63 @@ def init():
 
     #Define buttons and put these in position
     Btn_steer_right = tk.Button(window, width=BTN_WIDTH_1, text='Right', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn_steer_right.place(x=170, y=195)
+
     Btn_steer_left = tk.Button(window, width=BTN_WIDTH_1, text='Left', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn_steer_left.place(x=30, y=195)
+
     Btn0 = tk.Button(window, width=BTN_WIDTH_1, text='Forward', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn0.place(x=100, y=195)
+
+    Btn_middle = tk.Button(window, width=BTN_WIDTH_1, text='Middle', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn_middle.place(x=100, y=230)
+
     Btn1 = tk.Button(window, width=BTN_WIDTH_1, text='Backward', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn1.place(x=100, y=265)
+
     Btn2 = tk.Button(window, width=BTN_WIDTH_1, text='Max Left', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn2.place(x=30, y=230)
+
     Btn3 = tk.Button(window, width=BTN_WIDTH_1, text='Max Right', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn3.place(x=170, y=230)
+
+    BtnLED = tk.Button(window, width=BTN_WIDTH_1, text='Lights ON', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnLED.place(x=330, y=420)
+
     Btn4 = tk.Button(window, width=BTN_WIDTH_1, text='Stop', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn4.place(x=255, y=420)
+
     Btn5 = tk.Button(window, width=BTN_WIDTH_1, text='Follow', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    Btn5.place(x=180, y=420)
     
     Btn6 = tk.Button(window, width=BTN_WIDTH_1, text='Left', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn7 = tk.Button(window, width=BTN_WIDTH_1, text='Right', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn8 = tk.Button(window, width=BTN_WIDTH_1, text='Down', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn9 = tk.Button(window, width=BTN_WIDTH_1, text='Up', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn10 = tk.Button(window, width=BTN_WIDTH_1, text='Home', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn11 = tk.Button(window, width=BTN_WIDTH_1, text='Exit', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-
-    Btn12 = tk.Button(window, width=BTN_WIDTH_1, text='Set', command=spd_set, fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn13 = tk.Button(window, width=BTN_WIDTH_1, text='Scan', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-
-    Btn_steer_right.place(x=170, y=195)
-    Btn_steer_left.place(x=30, y=195)
-    Btn0.place(x=100, y=195)
-    Btn1.place(x=100, y=230)
-    Btn2.place(x=30, y=230)
-    Btn3.place(x=170, y=230)
-    Btn4.place(x=170, y=275)
-    Btn5.place(x=30, y=275)
-    
     Btn6.place(x=565, y=230)
+
+    Btn7 = tk.Button(window, width=BTN_WIDTH_1, text='Right', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     Btn7.place(x=705, y=230)
+
+    Btn8 = tk.Button(window, width=BTN_WIDTH_1, text='Down', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     Btn8.place(x=635, y=265)
+
+    Btn9 = tk.Button(window, width=BTN_WIDTH_1, text='Up', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     Btn9.place(x=635, y=195)
+
+    Btn10 = tk.Button(window, width=BTN_WIDTH_1, text='Home', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     Btn10.place(x=635, y=230)
+
+    Btn11 = tk.Button(window, width=BTN_WIDTH_1, text='Exit', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     Btn11.place(x=705, y=10)
 
+    Btn12 = tk.Button(window, width=BTN_WIDTH_1, text='Set', command=spd_set, fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     Btn12.place(x=535, y=107)
+
+    Btn13 = tk.Button(window, width=BTN_WIDTH_1, text='Scan', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     Btn13.place(x=350, y=330)
 
     # Bind the buttons with the corresponding callback function
     Btn_steer_right.bind('<ButtonPress-1>', call_steer_Right)
     Btn_steer_left.bind('<ButtonPress-1>', call_steer_Left)
+    Btn_middle.bind('<ButtonPress-1>', call_stop_2)
     Btn0.bind('<ButtonPress-1>', call_forward)
     Btn1.bind('<ButtonPress-1>', call_back)
     Btn2.bind('<ButtonPress-1>', click_call_Left)
