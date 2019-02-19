@@ -44,10 +44,10 @@ ip_entry = None
 l_ip_2 = None
 l_ip_4 = None
 l_ip_5 = None
-Btn5 = None
+buttonFollow = None
 Btn14 = None
 BtnFL = None
-BtnLED = None
+buttonHeadlights = None
 BtnOCV = None
 BtnSR3 = None
 l_ip = None
@@ -205,7 +205,7 @@ def find_line(event):            #Line follow mode
         tcpClicSock.send(('Stop').encode())
 
 
-def lights_ON(event):               #Turn on the LEDs
+def Headlights(event):               #Turn on the LEDs
     if led_status == 0:
         tcpClicSock.send(('lightsON').encode())
     else:
@@ -317,14 +317,7 @@ def Steering_set(event):            #Call this function for steering adjustment
     tcpClicSock.send(('STEERINGset:%s'%Steering.get()).encode())   
 
 
-def connect(event):       #Call this function to connect with the server
-    if ip_stu == 1:
-        sc=thread.Thread(target=socket_connect) #Define a thread for connection
-        sc.setDaemon(True)                      #True means it is a front thread, will close when mainloop() closes
-        sc.start()                              #Thread starts
-
-
-def connect_2():          #Call this function to connect with the server
+def connect(event=None):       #Call this function to connect with the server
     if ip_stu == 1:
         sc=thread.Thread(target=socket_connect) #Define a thread for connection
         sc.setDaemon(True)                      #True means it is a front thread, will close when mainloop() closes
@@ -514,7 +507,7 @@ def code_receive():     #A function for data receiving
         
         elif '0' in str(code_car):               #Translate the code to text
             l_ip.config(text='Follow Mode On')     #Put the text on the label
-            Btn5.config(text='Following', fg='#0277BD', bg='#BBDEFB')
+            buttonFollow.config(text='Following', fg='#0277BD', bg='#BBDEFB')
             auto_status = 1
         
         elif 'findline' in str(code_car):        #Translate the code to text
@@ -523,12 +516,12 @@ def code_receive():     #A function for data receiving
             findline_status = 1
         
         elif 'lightsON' in str(code_car):        #Translate the code to text
-            BtnLED.config(text='Lights ON', fg='#0277BD', bg='#BBDEFB')
+            buttonHeadlights.config(text='Lights ON', fg='#0277BD', bg='#BBDEFB')
             led_status=1
             l_ip.config(text='Lights On')        #Put the text on the label
         
         elif 'lightsOFF' in str(code_car):        #Translate the code to text
-            BtnLED.config(text='Lights OFF', fg=TEXT_COLOR, bg=BUTTON_COLOR)
+            buttonHeadlights.config(text='Lights OFF', fg=TEXT_COLOR, bg=BUTTON_COLOR)
             led_status=0
             l_ip.config(text='Lights OFF')        #Put the text on the label
 
@@ -542,7 +535,7 @@ def code_receive():     #A function for data receiving
             BtnSR3.config(fg=TEXT_COLOR, bg=BUTTON_COLOR, state='normal')
             BtnOCV.config(text='OpenCV', fg=TEXT_COLOR, bg=BUTTON_COLOR, state='normal')
             BtnFL.config(text='Find Line', fg=TEXT_COLOR, bg=BUTTON_COLOR)
-            Btn5.config(text='Follow', fg=TEXT_COLOR, bg=BUTTON_COLOR, state='normal')
+            buttonFollow.config(text='Follow', fg=TEXT_COLOR, bg=BUTTON_COLOR, state='normal')
             findline_status = 0
             speech_status   = 0
             opencv_status   = 0
@@ -550,7 +543,7 @@ def code_receive():     #A function for data receiving
 
 
 def init():
-    global ip_entry, l_ip_2, l_ip_4, l_ip_5, Btn14, Btn5, BtnFL, BtnLED, BtnOCV, var_x_scan, var_spd, \
+    global ip_entry, l_ip_2, l_ip_4, l_ip_5, Btn14, buttonFollow, BtnFL, buttonHeadlights, BtnOCV, var_x_scan, var_spd, \
            Steering, BtnSR3, l_ip, BtnIP, ipaddr, E_C1, E_C2, E_M1, E_M2, E_T1, E_T2, l_VIN, BtnVIN
 
     window.title('Adeept')              #Main window title
@@ -624,6 +617,13 @@ def init():
     E_T2 = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
     E_T2.place(x=785, y=495)                             #Define a Entry and put it in position
 
+    E_C1.insert ( 0, 'Default:425' ) 
+    E_C2.insert ( 0, 'Default:425' ) 
+    E_M1.insert ( 0, 'Default:100' ) 
+    E_M2.insert ( 0, 'Default:100' )
+    E_T1.insert ( 0, 'Default:662' ) 
+    E_T2.insert ( 0, 'Default:295' )
+
     BtnSteering = tk.Button(window, width=BTN_WIDTH_2, text='Steering Cen.', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnSteering.place(x=785, y=550)
     Steering = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
@@ -637,13 +637,6 @@ def init():
 
     BtnSR3 = tk.Button(window, width=BTN_WIDTH_1, text='Sphinx SR', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge', command=call_SR3)
     BtnSR3.place(x=300, y=495)
-
-    E_C1.insert ( 0, 'Default:425' ) 
-    E_C2.insert ( 0, 'Default:425' ) 
-    E_M1.insert ( 0, 'Default:100' ) 
-    E_M2.insert ( 0, 'Default:100' )
-    E_T1.insert ( 0, 'Default:662' ) 
-    E_T2.insert ( 0, 'Default:295' )
 
     can_scan = tk.Canvas(window, bg=CANVAS_COLOR, height=250, width=320, highlightthickness=0) #define a canvas
     can_scan.place(x=440, y=330) #Place the canvas
@@ -674,6 +667,9 @@ def init():
     l_ip_2=tk.Label(window, width=18, text='Speed:%s'%(var_spd.get()), fg=TEXT_COLOR, bg=BUTTON_COLOR)
     l_ip_2.place(x=30, y=145)                         #Define a Label and put it in position
 
+    l_ip_3=tk.Label(window, width=10, text='IP Address:', fg=TEXT_COLOR, bg='#000000')
+    l_ip_3.place(x=165, y=15)                         #Define a Label and put it in position
+
     l_ip_4=tk.Label(window, width=IP_WIDTH, text='Disconnected', fg=TEXT_COLOR, bg='#F44336')
     l_ip_4.place(x=637, y=110)                         #Define a Label and put it in position
 
@@ -687,10 +683,7 @@ def init():
     ip_entry = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1')
     ip_entry.place(x=170, y=40)                             #Define a Entry and put it in position
 
-    l_ip_3=tk.Label(window, width=10, text='IP Address:', fg=TEXT_COLOR, bg='#000000')
-    l_ip_3.place(x=165, y=15)                         #Define a Label and put it in position
-
-    Btn14= tk.Button(window, width=8, text='Connect', fg=TEXT_COLOR, bg=BUTTON_COLOR, command=connect_2, relief='ridge')
+    Btn14= tk.Button(window, width=8, text='Connect', fg=TEXT_COLOR, bg=BUTTON_COLOR, command=connect, relief='ridge')
     Btn14.place(x=300, y=35)                          #Define a Button and put it in position
 
     BtnVIN = tk.Button(window, width=BTN_WIDTH_2, text='Voice Input', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
@@ -700,85 +693,79 @@ def init():
     l_VIN.place(x=30, y=465)      
 
     #Define buttons and put these in position
-    Btn_steer_right = tk.Button(window, width=BTN_WIDTH_1, text='Right', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn_steer_right.place(x=170, y=195)
+    buttonSteerRight = tk.Button(window, width=BTN_WIDTH_1, text='Right', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    buttonSteerRight.place(x=170, y=195)
 
-    Btn_steer_left = tk.Button(window, width=BTN_WIDTH_1, text='Left', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn_steer_left.place(x=30, y=195)
+    buttonSteerLeft = tk.Button(window, width=BTN_WIDTH_1, text='Left', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    buttonSteerLeft.place(x=30, y=195)
 
-    Btn0 = tk.Button(window, width=BTN_WIDTH_1, text='Forward', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn0.place(x=100, y=195)
+    buttonForward = tk.Button(window, width=BTN_WIDTH_1, text='Forward', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    buttonForward.place(x=100, y=195)
 
-    Btn_middle = tk.Button(window, width=BTN_WIDTH_1, text='Middle', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn_middle.place(x=100, y=230)
+    buttonMiddle = tk.Button(window, width=BTN_WIDTH_1, text='Middle', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    buttonMiddle.place(x=100, y=230)
 
-    Btn1 = tk.Button(window, width=BTN_WIDTH_1, text='Backward', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn1.place(x=100, y=265)
+    buttonBackward = tk.Button(window, width=BTN_WIDTH_1, text='Backward', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    buttonBackward.place(x=100, y=265)
 
-    Btn2 = tk.Button(window, width=BTN_WIDTH_1, text='Max Left', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn2.place(x=30, y=230)
+    buttonMaxLeft = tk.Button(window, width=BTN_WIDTH_1, text='Max Left', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    buttonMaxLeft.place(x=30, y=230)
 
-    Btn3 = tk.Button(window, width=BTN_WIDTH_1, text='Max Right', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn3.place(x=170, y=230)
+    buttonMaxRight = tk.Button(window, width=BTN_WIDTH_1, text='Max Right', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    buttonMaxRight.place(x=170, y=230)
 
-    BtnLED = tk.Button(window, width=BTN_WIDTH_1, text='Lights ON', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    BtnLED.place(x=330, y=420)
+    buttonHeadlights = tk.Button(window, width=BTN_WIDTH_1, text='Headlights', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    buttonHeadlights.place(x=330, y=420)
 
-    Btn4 = tk.Button(window, width=BTN_WIDTH_1, text='Stop', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn4.place(x=255, y=420)
+    buttonStop = tk.Button(window, width=BTN_WIDTH_1, text='Stop', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    buttonStop.place(x=255, y=420)
 
-    Btn5 = tk.Button(window, width=BTN_WIDTH_1, text='Follow', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn5.place(x=180, y=420)
+    buttonFollow = tk.Button(window, width=BTN_WIDTH_1, text='Follow', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    buttonFollow.place(x=180, y=420)
     
-    Btn6 = tk.Button(window, width=BTN_WIDTH_1, text='Left', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn6.place(x=565, y=230)
+    buttonHeadLeft = tk.Button(window, width=BTN_WIDTH_1, text='Left', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    buttonHeadLeft.place(x=565, y=230)
 
-    Btn7 = tk.Button(window, width=BTN_WIDTH_1, text='Right', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn7.place(x=705, y=230)
+    buttonHeadRight = tk.Button(window, width=BTN_WIDTH_1, text='Right', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    buttonHeadRight.place(x=705, y=230)
 
-    Btn8 = tk.Button(window, width=BTN_WIDTH_1, text='Down', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn8.place(x=635, y=265)
+    buttonHeadDown = tk.Button(window, width=BTN_WIDTH_1, text='Down', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    buttonHeadDown.place(x=635, y=265)
 
-    Btn9 = tk.Button(window, width=BTN_WIDTH_1, text='Up', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn9.place(x=635, y=195)
+    buttonHeadUp = tk.Button(window, width=BTN_WIDTH_1, text='Up', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    buttonHeadUp.place(x=635, y=195)
 
-    Btn10 = tk.Button(window, width=BTN_WIDTH_1, text='Home', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn10.place(x=635, y=230)
+    buttonHeadHome = tk.Button(window, width=BTN_WIDTH_1, text='Home', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    buttonHeadHome.place(x=635, y=230)
 
-    Btn11 = tk.Button(window, width=BTN_WIDTH_1, text='Exit', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn11.place(x=705, y=10)
+    buttonExit = tk.Button(window, width=BTN_WIDTH_1, text='Exit', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    buttonExit.place(x=705, y=10)
 
-    Btn12 = tk.Button(window, width=BTN_WIDTH_1, text='Set', command=spd_set, fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn12.place(x=535, y=107)
+    buttonSet = tk.Button(window, width=BTN_WIDTH_1, text='Set', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    buttonSet.place(x=535, y=107)
 
-    Btn13 = tk.Button(window, width=BTN_WIDTH_1, text='Scan', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    Btn13.place(x=350, y=330)
+    buttonScan = tk.Button(window, width=BTN_WIDTH_1, text='Scan', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    buttonScan.place(x=350, y=330)
 
     # Bind the buttons with the corresponding callback function
-    Btn_steer_right.bind('<ButtonPress-1>', call_steer_Right)
-    Btn_steer_left.bind('<ButtonPress-1>', call_steer_Left)
-    Btn_middle.bind('<ButtonPress-1>', call_stop_2)
-    Btn0.bind('<ButtonPress-1>', call_forward)
-    Btn1.bind('<ButtonPress-1>', call_back)
-    Btn2.bind('<ButtonPress-1>', click_call_Left)
-    Btn3.bind('<ButtonPress-1>', click_call_Right)
-    Btn4.bind('<ButtonPress-1>', call_Stop)
-    Btn5.bind('<ButtonPress-1>', call_auto)
-    Btn6.bind('<ButtonPress-1>', call_look_left)
-    Btn7.bind('<ButtonPress-1>', call_look_right)
-
-    Btn8.bind('<ButtonPress-1>', call_look_down)
-    Btn9.bind('<ButtonPress-1>', call_look_up)
-    Btn10.bind('<ButtonPress-1>', call_ahead)
-    Btn11.bind('<ButtonPress-1>', call_exit)
-    Btn13.bind('<ButtonPress-1>', scan)
-
-    Btn0.bind('<ButtonRelease-1>', call_stop)
-    Btn1.bind('<ButtonRelease-1>', call_stop)
-    Btn2.bind('<ButtonRelease-1>', call_stop)
-    Btn3.bind('<ButtonRelease-1>', call_stop)
-    Btn4.bind('<ButtonRelease-1>', call_stop)
-
+    # first bind for button pressing
+    buttonSteerRight.bind('<ButtonPress-1>', call_steer_Right)
+    buttonSteerLeft.bind('<ButtonPress-1>', call_steer_Left)
+    buttonMiddle.bind('<ButtonPress-1>', call_stop_2)
+    buttonForward.bind('<ButtonPress-1>', call_forward)
+    buttonBackward.bind('<ButtonPress-1>', call_back)
+    buttonMaxLeft.bind('<ButtonPress-1>', click_call_Left)
+    buttonMaxRight.bind('<ButtonPress-1>', click_call_Right)
+    buttonStop.bind('<ButtonPress-1>', call_Stop)
+    buttonFollow.bind('<ButtonPress-1>', call_auto)
+    buttonHeadLeft.bind('<ButtonPress-1>', call_look_left)
+    buttonHeadRight.bind('<ButtonPress-1>', call_look_right)
+    buttonHeadDown.bind('<ButtonPress-1>', call_look_down)
+    buttonHeadUp.bind('<ButtonPress-1>', call_look_up)
+    buttonHeadHome.bind('<ButtonPress-1>', call_ahead)
+    buttonExit.bind('<ButtonPress-1>', call_exit)
+    buttonSet.bind('<ButtonPress-1>', spd_set)
+    buttonScan.bind('<ButtonPress-1>', scan)
     BtnC1.bind('<ButtonPress-1>', EC1_set)
     BtnC2.bind('<ButtonPress-1>', EC2_set)
     BtnM1.bind('<ButtonPress-1>', EM1_set)
@@ -788,8 +775,15 @@ def init():
     BtnSteering.bind('<ButtonPress-1>', Steering_set)
     BtnFL.bind('<ButtonPress-1>', find_line)
     BtnVIN.bind('<ButtonPress-1>', voice_command)
+    buttonHeadlights.bind('<ButtonPress-1>', Headlights)
 
-    BtnLED.bind('<ButtonPress-1>', lights_ON)
+    # bind for button release
+    buttonForward.bind('<ButtonRelease-1>', call_stop)
+    buttonBackward.bind('<ButtonRelease-1>', call_stop)
+    buttonMaxLeft.bind('<ButtonRelease-1>', call_stop)
+    buttonMaxRight.bind('<ButtonRelease-1>', call_stop)
+    buttonStop.bind('<ButtonRelease-1>', call_stop)
+
     # Bind the keys with the corresponding callback function
     window.bind('<KeyPress-w>', call_forward) 
     window.bind('<KeyPress-a>', call_Left)
@@ -801,7 +795,7 @@ def init():
     window.bind('<KeyRelease-a>', call_stop_2)
     window.bind('<KeyRelease-d>', call_stop_2)
     window.bind('<KeyRelease-s>', call_stop)
-    window.bind('<KeyRelease-f>', lights_ON)
+    window.bind('<KeyRelease-f>', Headlights)
     window.bind('<KeyRelease-e>', find_line)
     window.bind('<KeyRelease-q>', voice_command)
 
@@ -815,7 +809,7 @@ def init():
     window.bind('<KeyPress-i>', call_look_up)
     window.bind('<KeyPress-x>', scan)
     window.bind('<Return>', connect)
-    window.bind('<Shift_L>',call_stop)
+    window.bind('<Shift_L>', call_stop)
 
 
 # Main program body    
