@@ -10,7 +10,7 @@
 import sys
 sys.path.insert(0, "../common")
 import config
-from socket import *
+import socket 
 import sys,subprocess
 import time
 import threading as thread
@@ -21,7 +21,7 @@ import cv2
 import zmq
 import base64
 import numpy as np
-from tkinter import font
+#from tkinter import font
 
 
 # constants
@@ -38,21 +38,19 @@ SERVER_PORT      = 10223        #Define port serial
 # global variables
 window = tk.Tk()
 tcpClicSock = None  #for robot server socket connection
-ip_stu = 1          #Shows connection status
 
 ip_entry = None
-l_ip_2 = None
-l_ip_4 = None
-l_ip_5 = None
+labelSpeedStatus = None
+labelConnectionStatus = None
+labelIpAddress = None
 buttonFollow = None
-Btn14 = None
+buttonConnect = None
 BtnFL = None
 buttonHeadlights = None
 BtnOCV = None
 BtnSR3 = None
-l_ip = None
+labelStatus = None
 BtnIP = None
-ipaddr = None
 E_C1 = None
 E_C2= None
 E_M1 = None
@@ -286,7 +284,7 @@ def voice_command(event):
 
 def spd_set():                 #Call this function for speed adjustment
     tcpClicSock.send(('spdset:%s'%var_spd.get()).encode())   #Get a speed value from IntVar and send it to the car
-    l_ip_2.config(text='Speed:%s'%var_spd.get())             #Put the speed value on the speed status label
+    labelSpeedStatus.config(text='Speed:%s'%var_spd.get())             #Put the speed value on the speed status label
 
 
 def EC1_set(event):            #Call this function for speed adjustment
@@ -318,43 +316,41 @@ def Steering_set(event):            #Call this function for steering adjustment
 
 
 def connect(event=None):       #Call this function to connect with the server
-    if ip_stu == 1:
-        sc=thread.Thread(target=socket_connect) #Define a thread for connection
-        sc.setDaemon(True)                      #True means it is a front thread, will close when mainloop() closes
-        sc.start()                              #Thread starts
+    sc=thread.Thread(target=socket_connect) #Define a thread for connection
+    sc.setDaemon(True)                      #True means it is a front thread, will close when mainloop() closes
+    sc.start()                              #Thread starts
 
 
 def socket_connect():     #Call this function to connect with the robot server
-    global tcpClicSock, ip_stu, ipaddr, ip_entry
+    global tcpClicSock, ip_entry
     
+    buttonConnect.config(state='disabled') #Disable the Connect button while trying to connect
     ip_adr=ip_entry.get()    #Get the IP address from Entry
 
     if ip_adr == '':         #If no input IP address in Entry, try to import a default IP
         ip_adr = config.importConfig('IP')
         if ip_adr == None:
             ip_adr = "0.0.0.0"
-        l_ip_4.config(text='Connecting')
-        l_ip_4.config(bg='#FF8F00')
-        l_ip_5.config(text='Default:%s'%ip_adr)
-        pass
+        labelConnectionStatus.config(text='Connecting')
+        labelConnectionStatus.config(bg='#FF8F00')
+        labelIpAddress.config(text='Default:%s'%ip_adr)
     
     for i in range (1,6): # Retry 5 additional times if connection fails
         try:
             print("Connecting to server @ %s:%d..." %(ip_adr, SERVER_PORT))
             address = (ip_adr, SERVER_PORT)
-            s = socket(AF_INET, SOCK_STREAM) #Set connection value for socket
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #Set connection value for socket
             s.connect(address)               #Connection with the server
         
             print("robot Connected")
             tcpClicSock = s
         
             config.exportConfig('IP', ip_adr)
-            l_ip_5.config(text='IP:%s'%ip_adr)
-            l_ip_4.config(text='Connected')
-            l_ip_4.config(bg='#558B2F')
+            labelIpAddress.config(text='IP:%s'%ip_adr)
+            labelConnectionStatus.config(text='Connected')
+            labelConnectionStatus.config(bg='#558B2F')
 
-            ip_entry.config(state='disabled')     #Disable the Entry
-            Btn14.config(state='disabled')        #Disable the Entry
+            ip_entry.config(state='disabled')      #Disable the Entry
                     
             at=thread.Thread(target=code_receive) #Define a thread for data receiving
             at.setDaemon(True)                    #True means it is a front thread, will close when mainloop() closes
@@ -364,23 +360,22 @@ def socket_connect():     #Call this function to connect with the robot server
             video_thread.setDaemon(True)          #True means it is a front thread, will close when mainloop() closes
             print('Video Connected')
             video_thread.start()                          #Thread starts
-
-            ipaddr=tcpClicSock.getsockname()[0]
             break
 
         except Exception as e:
             print(e)
             print("Failed to connect to server!")
-            print('Retrying %d/5 time(s)'%i)
-            l_ip_4.config(text='Retrying %d/5 time(s)'%i)
-            l_ip_4.config(bg='#EF6C00')
+            print('Tried %d/5 time(s)'%i)
+            labelConnectionStatus.config(text='Tried %d/5 time(s)'%i)
+            labelConnectionStatus.config(bg='#EF6C00')
             tcpClicSock = None
             time.sleep(1)
             continue
 
     if tcpClicSock == None:
-        l_ip_4.config(text='Disconnected')
-        l_ip_4.config(bg='#F44336')
+        labelConnectionStatus.config(text='Disconnected')
+        labelConnectionStatus.config(bg='#F44336')
+        buttonConnect.config(state='normal') #enable the Connect button
 
 
 def code_receive():     #A function for data receiving
@@ -392,7 +387,7 @@ def code_receive():     #A function for data receiving
         except Exception:
             print ("got socket exception in code _receive thread, will terminate thread")
             exit()
-        l_ip.config(text=code_car)          #Put the data on the label
+        labelStatus.config(text=code_car)          #Put the data on the label
         print("recvd from robot: " + str(code_car))
         if not code_car:
             continue
@@ -543,8 +538,8 @@ def code_receive():     #A function for data receiving
 
 
 def init():
-    global ip_entry, l_ip_2, l_ip_4, l_ip_5, Btn14, buttonFollow, BtnFL, buttonHeadlights, BtnOCV, var_x_scan, var_spd, \
-           Steering, BtnSR3, l_ip, BtnIP, ipaddr, E_C1, E_C2, E_M1, E_M2, E_T1, E_T2, l_VIN, BtnVIN
+    global ip_entry, labelSpeedStatus, labelConnectionStatus, labelIpAddress, buttonConnect, buttonFollow, BtnFL, buttonHeadlights, BtnOCV, \
+           var_x_scan, var_spd, Steering, BtnSR3, labelStatus, BtnIP, E_C1, E_C2, E_M1, E_M2, E_T1, E_T2, l_VIN, BtnVIN
 
     window.title('Adeept')              #Main window title
     window.geometry('917x630')          #Main window size, middle of the English letter x.
@@ -661,20 +656,20 @@ def init():
     showvalue=1, tickinterval=1, resolution=1, variable=var_x_scan, fg=TEXT_COLOR, bg=BACKGROUND_COLOR, highlightthickness=0)
     s3.place(x=30, y=320)    
 
-    l_ip=tk.Label(window, width=18, text='Status', fg=TEXT_COLOR, bg=BUTTON_COLOR)
-    l_ip.place(x=30, y=110)                           #Define a Label and put it in position
+    labelStatus=tk.Label(window, width=18, text='Status', fg=TEXT_COLOR, bg=BUTTON_COLOR)
+    labelStatus.place(x=30, y=110)                           #Define a Label and put it in position
 
-    l_ip_2=tk.Label(window, width=18, text='Speed:%s'%(var_spd.get()), fg=TEXT_COLOR, bg=BUTTON_COLOR)
-    l_ip_2.place(x=30, y=145)                         #Define a Label and put it in position
+    labelSpeedStatus=tk.Label(window, width=18, text='Speed:%s'%(var_spd.get()), fg=TEXT_COLOR, bg=BUTTON_COLOR)
+    labelSpeedStatus.place(x=30, y=145)                         #Define a Label and put it in position
 
-    l_ip_3=tk.Label(window, width=10, text='IP Address:', fg=TEXT_COLOR, bg='#000000')
-    l_ip_3.place(x=165, y=15)                         #Define a Label and put it in position
+    label=tk.Label(window, width=10, text='IP Address:', fg=TEXT_COLOR, bg='#000000')
+    label.place(x=165, y=15)                         #Define a Label and put it in position
 
-    l_ip_4=tk.Label(window, width=IP_WIDTH, text='Disconnected', fg=TEXT_COLOR, bg='#F44336')
-    l_ip_4.place(x=637, y=110)                         #Define a Label and put it in position
+    labelConnectionStatus=tk.Label(window, width=IP_WIDTH, text='Disconnected', fg=TEXT_COLOR, bg='#F44336')
+    labelConnectionStatus.place(x=637, y=110)                         #Define a Label and put it in position
 
-    l_ip_5=tk.Label(window, width=IP_WIDTH, text='Use default IP', fg=TEXT_COLOR, bg=BUTTON_COLOR)
-    l_ip_5.place(x=637, y=145)                         #Define a Label and put it in position
+    labelIpAddress=tk.Label(window, width=IP_WIDTH, text='Use default IP', fg=TEXT_COLOR, bg=BUTTON_COLOR)
+    labelIpAddress.place(x=637, y=145)                         #Define a Label and put it in position
 
     l_inter=tk.Label(window, width=INFO_WIDTH, text='<- CAR ADJUSTMENT        CAMERA ADJUSTMENT ->\nW:Move Forward                 Look Up:I\nS:Move Backward            Look Down:K\nA:Turn Left                          Turn Left:J\nD:Turn Right                      Turn Right:L\nZ:Auto Mode On          Look Forward:H\nC:Auto Mode Off      Ultrasdonic Scan:X' ,
     fg='#212121', bg='#90a4ae')
@@ -683,8 +678,8 @@ def init():
     ip_entry = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1')
     ip_entry.place(x=170, y=40)                             #Define a Entry and put it in position
 
-    Btn14= tk.Button(window, width=8, text='Connect', fg=TEXT_COLOR, bg=BUTTON_COLOR, command=connect, relief='ridge')
-    Btn14.place(x=300, y=35)                          #Define a Button and put it in position
+    buttonConnect= tk.Button(window, width=8, text='Connect', fg=TEXT_COLOR, bg=BUTTON_COLOR, command=connect, relief='ridge')
+    buttonConnect.place(x=300, y=35)                          #Define a Button and put it in position
 
     BtnVIN = tk.Button(window, width=BTN_WIDTH_2, text='Voice Input', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnVIN.place(x=30, y=495)
