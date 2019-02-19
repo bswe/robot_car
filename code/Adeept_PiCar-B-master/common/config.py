@@ -1,3 +1,13 @@
+#!/usr/bin/python3
+# File name   : config.py
+# Description : module for reading/writing configuration items from/to a file for persistence
+# Website     : github.com/bswe
+# E-mail      : billbollenba@yahoo.com
+# Author      : WCB
+# Date        : 2/11/2019
+
+
+
 def exportConfig(ItemName, Value):   # Call this function to export item to 'config.txt' file
     ItemName += ":"
     newlines = ""
@@ -30,6 +40,7 @@ def importConfig(ItemName):          # Call this function to import item from 'c
     value = line[lenItemName:]
     #print(str(lenItemName) + " " + value)
     return value
+
 
 def importConfigInt(ItemName):
     value = importConfig(ItemName)
