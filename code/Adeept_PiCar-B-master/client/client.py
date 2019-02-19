@@ -81,8 +81,6 @@ auto_status     = 0
 speech_status   = 0
 findline_status = 0
 
-ipcon=0
-
 
 def video_show():
     while True:
@@ -99,62 +97,63 @@ def video_show():
         cv2.waitKey(1)                
 
 
-def call_forward(event):         #When this function is called,client commands the car to move forward
+def call_forward(event):         #When this function is called, client commands the car to move forward
     global c_f_stu
     if c_f_stu == 0:
         tcpClicSock.send(('forward').encode())
         c_f_stu=1
 
 
-def call_back(event):            #When this function is called,client commands the car to move backward
+def call_back(event):            #When this function is called, client commands the car to move backward
     global c_b_stu 
     if c_b_stu == 0:
         tcpClicSock.send(('backward').encode())
         c_b_stu=1
 
 
-def call_stop(event):            #When this function is called,client commands the car to stop moving
+def call_stop(event):            #When this function is called, client commands the car to stop moving
     global c_f_stu, c_b_stu
     c_f_stu=0
     c_b_stu=0
     tcpClicSock.send(('stop').encode())
 
 
-def call_stop_2(event):            #When this function is called,client commands the car go straight
+def call_middle(event):            #When this function is called, client commands the car go straight
     global c_l_stu, c_r_stu
     c_r_stu=0
     c_l_stu=0
     tcpClicSock.send(('middle').encode())
 
 
-def call_steer_Left(event):            #When this function is called,client commands the car to turn left
-    tcpClicSock.send(('SteerLeft').encode())
-
-
-def call_steer_Right(event):           #When this function is called,client commands the car to turn right
-    tcpClicSock.send(('SteerRight').encode())
-
-
-def click_call_Left(event):            #When this function is called,client commands the car to turn left
-    tcpClicSock.send(('Left').encode())
-
-
-def click_call_Right(event):           #When this function is called,client commands the car to turn right
-    tcpClicSock.send(('Right').encode())
-
-
-def call_Left(event):            #When this function is called,client commands the car to turn left
+def call_Left(event):            #When this function is called, client commands the car to turn left
     global c_l_stu
+    print("call_Left: c_l_stu=%s" %str(c_l_stu))
     if c_l_stu == 0 :
         tcpClicSock.send(('Left').encode())
         c_l_stu=1
 
 
-def call_Right(event):           #When this function is called,client commands the car to turn right
+def call_Right(event):           #When this function is called, client commands the car to turn right
     global c_r_stu
     if c_r_stu == 0 :
         tcpClicSock.send(('Right').encode())
         c_r_stu=1
+
+
+def call_steer_Left(event):            #When this function is called, client commands the car to turn left
+    tcpClicSock.send(('SteerLeft').encode())
+
+
+def call_steer_Right(event):           #When this function is called, client commands the car to turn right
+    tcpClicSock.send(('SteerRight').encode())
+
+
+def click_call_Left(event):            #When this function is called, client commands the car to turn left
+    tcpClicSock.send(('Left').encode())
+
+
+def click_call_Right(event):           #When this function is called, client commands the car to turn right
+    tcpClicSock.send(('Right').encode())
 
 
 def call_look_left(event):               #Camera look left
@@ -177,22 +176,22 @@ def call_ahead(event):                   #Camera look ahead
     tcpClicSock.send(('ahead').encode())
 
 
-def call_auto(event):            #When this function is called,client commands the car to start auto mode
+def call_auto(event):            #When this function is called, client commands the car to start auto mode
     if auto_status == 0:
         tcpClicSock.send(('auto').encode())
     else:
         tcpClicSock.send(('Stop').encode())
 
 
-def call_exit(event):            #When this function is called,client commands the car to shut down
+def call_exit(event):            #When this function is called, client commands the car to shut down
     tcpClicSock.send(('exit').encode())
 
 
-def call_Stop(event):            #When this function is called,client commands the car to switch off auto mode
+def call_Stop(event):            #When this function is called, client commands the car to switch off auto mode
     tcpClicSock.send(('Stop').encode())
 
 
-def scan(event):                 #When this function is called,client commands the ultrasonic to scan
+def scan(event):                 #When this function is called, client commands the ultrasonic to scan
     tcpClicSock.send(('scan').encode())
 
 
@@ -379,7 +378,7 @@ def socket_connect():     #Call this function to connect with the robot server
 
 
 def code_receive():     #A function for data receiving
-    global led_status, ipcon, findline_status, auto_status, opencv_status, speech_status
+    global led_status, findline_status, auto_status, opencv_status, speech_status
     
     while True:
         try:
@@ -421,10 +420,10 @@ def code_receive():     #A function for data receiving
                 if 'finished' in str(code_car):
                     break
                 list_str+=code_car.decode()
-                l_ip.config(text='Scanning')
+                labelStatus.config(text='Scanning')
             
             dis_list=list_str.split()       #Save the data as a list
-            l_ip.config(text='Finished')
+            labelStatus.config(text='Finished')
             
             for i in range (0,len(dis_list)):   #Translate the String-type value in the list to Float-type
                 try:
@@ -478,52 +477,52 @@ def code_receive():     #A function for data receiving
 
         elif 'voice_3' in str(code_car):         # put this case before the numbers below because of the 3
             BtnSR3.config(fg='#0277BD', bg='#BBDEFB')
-            l_ip.config(text='Sphinx SR')        #Put the text on the label
+            labelStatus.config(text='Sphinx SR')        #Put the text on the label
             speech_status = 1
 
         elif '1' in str(code_car):               #Translate the code to text
-            l_ip.config(text='Moving Forward')   #Put the text on the label
+            labelStatus.config(text='Moving Forward')   #Put the text on the label
         elif '2' in str(code_car):               #Translate the code to text
-            l_ip.config(text='Moving Backward')  #Put the text on the label
+            labelStatus.config(text='Moving Backward')  #Put the text on the label
         elif '3' in str(code_car):               #Translate the code to text
-            l_ip.config(text='Turning Left')     #Put the text on the label
+            labelStatus.config(text='Turning Left')     #Put the text on the label
         elif '4' in str(code_car):               #Translate the code to text
-            l_ip.config(text='Turning Right')    #Put the text on the label
+            labelStatus.config(text='Turning Right')    #Put the text on the label
         elif '5' in str(code_car):               #Translate the code to text
-            l_ip.config(text='Look Up')          #Put the text on the label
+            labelStatus.config(text='Look Up')          #Put the text on the label
         elif '6' in str(code_car):               #Translate the code to text
-            l_ip.config(text='Look Down')        #Put the text on the label
+            labelStatus.config(text='Look Down')        #Put the text on the label
         elif '7' in str(code_car):               #Translate the code to text
-            l_ip.config(text='Look Left')        #Put the text on the label
+            labelStatus.config(text='Look Left')        #Put the text on the label
         elif '8' in str(code_car):               #Translate the code to text
-            l_ip.config(text='Look Right')       #Put the text on the label
+            labelStatus.config(text='Look Right')       #Put the text on the label
         elif '9' in str(code_car):               #Translate the code to text
-            l_ip.config(text='Stop')             #Put the text on the label
+            labelStatus.config(text='Stop')             #Put the text on the label
         
         elif '0' in str(code_car):               #Translate the code to text
-            l_ip.config(text='Follow Mode On')     #Put the text on the label
+            labelStatus.config(text='Follow Mode On')     #Put the text on the label
             buttonFollow.config(text='Following', fg='#0277BD', bg='#BBDEFB')
             auto_status = 1
         
         elif 'findline' in str(code_car):        #Translate the code to text
             BtnFL.config(text='Finding', fg='#0277BD', bg='#BBDEFB')
-            l_ip.config(text='Find Line') 
+            labelStatus.config(text='Find Line') 
             findline_status = 1
         
         elif 'lightsON' in str(code_car):        #Translate the code to text
             buttonHeadlights.config(text='Lights ON', fg='#0277BD', bg='#BBDEFB')
             led_status=1
-            l_ip.config(text='Lights On')        #Put the text on the label
+            labelStatus.config(text='Lights On')        #Put the text on the label
         
         elif 'lightsOFF' in str(code_car):        #Translate the code to text
             buttonHeadlights.config(text='Lights OFF', fg=TEXT_COLOR, bg=BUTTON_COLOR)
             led_status=0
-            l_ip.config(text='Lights OFF')        #Put the text on the label
+            labelStatus.config(text='Lights OFF')        #Put the text on the label
 
         elif 'oncvon' in str(code_car):
             BtnOCV.config(text='OpenCV ON', fg='#0277BD', bg='#BBDEFB')
             BtnFL.config(text='Find Line', fg=TEXT_COLOR, bg=BUTTON_COLOR)
-            l_ip.config(text='OpenCV ON')
+            labelStatus.config(text='OpenCV ON')
             opencv_status = 1
 
         elif 'auto_status_off' in str(code_car):
@@ -551,7 +550,7 @@ def init():
         IP_ENTRY_WIDTH = 14
         BTN_WIDTH_1 = 5
         BTN_WIDTH_2 = 11
-        INFO_WIDTH = 38
+        INFO_WIDTH = 32
         INFO_X = 247
         IP_WIDTH = 15
         # reducing font size so widgets fit right on Raspbian
@@ -567,7 +566,7 @@ def init():
         IP_ENTRY_WIDTH = 16
         BTN_WIDTH_1 = 8
         BTN_WIDTH_2 = 15
-        INFO_WIDTH = 45
+        INFO_WIDTH = 39
         INFO_X = 240
         IP_WIDTH = 18
         
@@ -671,9 +670,19 @@ def init():
     labelIpAddress=tk.Label(window, width=IP_WIDTH, text='Use default IP', fg=TEXT_COLOR, bg=BUTTON_COLOR)
     labelIpAddress.place(x=637, y=145)                         #Define a Label and put it in position
 
-    l_inter=tk.Label(window, width=INFO_WIDTH, text='<- CAR ADJUSTMENT        CAMERA ADJUSTMENT ->\nW:Move Forward                 Look Up:I\nS:Move Backward            Look Down:K\nA:Turn Left                          Turn Left:J\nD:Turn Right                      Turn Right:L\nZ:Auto Mode On          Look Forward:H\nC:Auto Mode Off      Ultrasdonic Scan:X' ,
-    fg='#212121', bg='#90a4ae')
-    l_inter.place(x=INFO_X, y=180)                    #Define a Label and put it in position
+    label=tk.Label(window,
+                   width=INFO_WIDTH, anchor=tk.W, justify=tk.LEFT, font='TkFixedFont',
+                   text='<-- CAR CONTROLS      HEAD CONTROLS -->\n' \
+                        '     W - forward       I - up\n' \
+                        '     S - backward      M - down\n' \
+                        '     A - max left      J - left\n' \
+                        '     D - max right     L - right\n' \
+                        '     Q - steer left    K - home\n' \
+                        '     E - steer right   H - headlights\n' \
+                        '     Z - auto on       F - find line\n' \
+                        '     C - auto off      X - scan' ,
+                   fg='#212121', bg='#90a4ae')
+    label.place(x=INFO_X, y=173)                    #Define a Label and put it in position
 
     ip_entry = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1')
     ip_entry.place(x=170, y=40)                             #Define a Entry and put it in position
@@ -746,7 +755,7 @@ def init():
     # first bind for button pressing
     buttonSteerRight.bind('<ButtonPress-1>', call_steer_Right)
     buttonSteerLeft.bind('<ButtonPress-1>', call_steer_Left)
-    buttonMiddle.bind('<ButtonPress-1>', call_stop_2)
+    buttonMiddle.bind('<ButtonPress-1>', call_middle)
     buttonForward.bind('<ButtonPress-1>', call_forward)
     buttonBackward.bind('<ButtonPress-1>', call_back)
     buttonMaxLeft.bind('<ButtonPress-1>', click_call_Left)
@@ -784,23 +793,25 @@ def init():
     window.bind('<KeyPress-a>', call_Left)
     window.bind('<KeyPress-d>', call_Right)
     window.bind('<KeyPress-s>', call_back)
+    window.bind('<KeyPress-q>', call_steer_Left)
+    window.bind('<KeyPress-e>', call_steer_Right)
 
     # When these keys is released,call the function call_stop()
     window.bind('<KeyRelease-w>', call_stop)
-    window.bind('<KeyRelease-a>', call_stop_2)
-    window.bind('<KeyRelease-d>', call_stop_2)
+    window.bind('<KeyRelease-a>', call_middle)
+    window.bind('<KeyRelease-d>', call_middle)
     window.bind('<KeyRelease-s>', call_stop)
-    window.bind('<KeyRelease-f>', Headlights)
-    window.bind('<KeyRelease-e>', find_line)
-    window.bind('<KeyRelease-q>', voice_command)
+    window.bind('<KeyRelease-h>', Headlights)
+    window.bind('<KeyRelease-f>', find_line)
+    window.bind('<KeyRelease-v>', voice_command)
 
     # Press these keyss to call the corresponding function()
     window.bind('<KeyPress-c>', call_Stop)
     window.bind('<KeyPress-z>', call_auto) 
     window.bind('<KeyPress-j>', call_look_left)
     window.bind('<KeyPress-l>', call_look_right)
-    window.bind('<KeyPress-h>', call_ahead)
-    window.bind('<KeyPress-k>', call_look_down)
+    window.bind('<KeyPress-k>', call_ahead)
+    window.bind('<KeyPress-m>', call_look_down)
     window.bind('<KeyPress-i>', call_look_up)
     window.bind('<KeyPress-x>', scan)
     window.bind('<Return>', connect)
