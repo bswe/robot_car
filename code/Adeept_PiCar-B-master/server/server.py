@@ -20,7 +20,7 @@ import Adafruit_PCA9685
 import picamera
 from picamera.array import PiRGBArray
 import servos
-import led
+import headlights
 import findline
 import speech
 import cv2
@@ -28,15 +28,13 @@ from collections import deque
 import numpy as np
 import argparse
 import imutils
-from rpi_ws281x import *
+import rpi_ws281x
 import argparse
 import zmq
 import base64
 import os
 import subprocess
 import atexit
-
-#time.sleep(4)
 
 pwm = Adafruit_PCA9685.PCA9685()    #Ultrasonic Control
 
@@ -45,20 +43,9 @@ distance_stay  = 0.4
 distance_range = 2
 led_status = 0
 
-left_R = 15
-left_G = 16
-left_B = 18
-
-right_R = 19
-right_G = 21
-right_B = 22
-
-spd_adj     = 1          #Speed Adjustment
+spd_adj    = 1          #Speed Adjustment
 pwm0       = 0          #Camera direction 
 pwm1       = 1          #Ultrasonic direction
-status     = 1          #Motor rotation
-forward    = 1          #Motor forward
-backward   = 0          #Motor backward
 
 left_spd   = 100         #Speed of the car
 right_spd  = 100         #Speed of the car
@@ -72,14 +59,18 @@ spd_ad_u = 1
 #Status of the car
 auto_status   = 0
 ap_status     = 0
-turn_status   = 0
+
+NO_TURN       = 0
+RIGHT_TURN    = 1
+LEFT_TURN     = 2
+turn_status   = NO_TURN
 
 opencv_mode   = 0
 findline_mode = 0
 speech_mode   = 0
 auto_mode     = 0
 
-data = ''
+command = ''
 
 dis_data = 0
 dis_scan = 1
@@ -115,24 +106,23 @@ def get_cpu_speed():
 def wheel(pos):
     """Generate rainbow colors across 0-255 positions."""
     if pos < 85:
-        return Color(pos * 3, 255 - pos * 3, 0)
+        return rpi_ws281x.rpi_ws281x.Color(pos * 3, 255 - pos * 3, 0)
     elif pos < 170:
         pos -= 85
-        return Color(255 - pos * 3, 0, pos * 3)
+        return rpi_ws281x.rpi_ws281x.Color(255 - pos * 3, 0, pos * 3)
     else:
         pos -= 170
-        return Color(0, pos * 3, 255 - pos * 3)
+        return rpi_ws281x.rpi_ws281x.Color(0, pos * 3, 255 - pos * 3)
 
 
 def rainbowCycle(strip, wait_ms=20, iterations=5):
     """Draw rainbow that uniformly distributes itself across all pixels."""
+    print("rainbowCycle: wait_ms=%s" %str(wait_ms))
     for j in range(256*iterations):
-        if 'forward' in data:
-            for i in range(strip.numPixels()):
-                if 'forward' in data:
-                    strip.setPixelColor(i, wheel((int(i * 256 / strip.numPixels()) + j) & 255))
-            strip.show()
-            time.sleep(wait_ms/1000.0)
+        for i in range(strip.numPixels()):
+            strip.setPixelColor(i, wheel((int(i * 256 / strip.numPixels()) + j) & 255))
+    strip.show()
+    time.sleep(wait_ms/1000.0)
 
 
 def theaterChaseRainbow(strip, wait_ms=50):
@@ -149,6 +139,7 @@ def theaterChaseRainbow(strip, wait_ms=50):
 
 def colorWipe(strip, color):
     """Wipe color across display a pixel at a time."""
+    print("colorWipe: color=%s" %str(color))
     for i in range(strip.numPixels()):
         strip.setPixelColor(i, color)
         strip.show()
@@ -181,25 +172,20 @@ def camera_turn(vtr_mid):    #Control the direction of Camera
     pwm.set_pwm(0, 0, vtr_mid)
 
 
-def turn_left_led():         #Turn on the LED on the left
-    led.turn_left(4)
+def turn_left_led():         #blink the LED on the left
+    headlights.blinker(headlights.LEFT, 4)
 
 
-def turn_right_led():        #Turn on the LED on the right
-    led.turn_right(4)
+def turn_right_led():        #blink the LED on the right
+    headlights.blinker(headlights.RIGHT, 4)
 
 
 def setup():                 #initialization
-    led.setup()
+    headlights.setup()
     motor.setup()            
     servos.ahead()
     findline.setup()
 
-
-def destroy():               #Clean up
-    GPIO.cleanup()
-    #connection.close()
-    #client_socket.close()
 
 def opencv_thread():         #OpenCV and FPV video
     global hoz_mid_orig,vtr_mid_orig
@@ -219,8 +205,7 @@ def opencv_thread():         #OpenCV and FPV video
                 cv2.CHAIN_APPROX_SIMPLE)[-2]
             center = None
             if len(cnts) > 0:
-                led.both_off()
-                led.green()
+                headlights.turn(headlights.BOTH, headlights.GREEN)
                 cv2.putText(image,'Target Detected',(40,60), font, 0.5,(255,255,255),1,cv2.LINE_AA)
                 c = max(cnts, key=cv2.contourArea)
                 ((x, y), radius) = cv2.minEnclosingCircle(c)
@@ -258,20 +243,18 @@ def opencv_thread():         #OpenCV and FPV video
 
                     dis = dis_data
                     if dis < (distance_stay-0.1) :
-                        led.both_off()
-                        led.red()
+                        headlights.turn(headlights.BOTH, headlights.RED)
                         servos.turn_ang(mu_t)
-                        motor.motorLeft(status, backward,left_spd*spd_ad_u)
-                        motor.motorRight(status,forward,right_spd*spd_ad_u)
+                        motor.motorLeft(motor.BACKWARD, left_spd*spd_ad_u)
+                        motor.motorRight(motor.FORWARD, right_spd*spd_ad_u)
                         cv2.putText(image,'Too Close',(40,80), font, 0.5,(128,128,255),1,cv2.LINE_AA)
                     elif dis > (distance_stay+0.1):
-                        motor.motorLeft(status, forward,left_spd*spd_ad_2)
-                        motor.motorRight(status,backward,right_spd*spd_ad_2)
+                        motor.motorLeft(motor.FORWARD, left_spd*spd_ad_2)
+                        motor.motorRight(motor.BACKWARD, right_spd*spd_ad_2)
                         cv2.putText(image,'OpenCV Tracking',(40,80), font, 0.5,(128,255,128),1,cv2.LINE_AA)
                     else:
                         motor.motorStop()
-                        led.both_off()
-                        led.blue()  
+                        headlights.turn(headlights.BOTH, headlights.BLUE)
                         cv2.putText(image,'In Position',(40,80), font, 0.5,(255,128,128),1,cv2.LINE_AA)
 
                     if dis < 8:
@@ -302,8 +285,7 @@ def opencv_thread():         #OpenCV and FPV video
                             cv2.rectangle(image,(int(x-radius),int(y+radius)),
                                 (int(x+radius),int(y-radius)),(64,64,255),1)
             else:
-                led.both_off()
-                led.yellow()
+                headlights.turn(headlights.BOTH, headlights.YELLOW)
                 cv2.putText(image,'Target Detecting',(40,60), font, 0.5,(255,255,255),1,cv2.LINE_AA)
                 led_y=1
                 motor.motorStop()
@@ -325,22 +307,36 @@ def opencv_thread():         #OpenCV and FPV video
         rawCapture.truncate(0)
 
 
-def ws2812_thread():         #WS_2812 leds
+def ws2812_thread():         #WS_2812 strip leds
     while 1:
-        if 'forward' in data:
-            rainbowCycle(strip)
-            time.sleep(0.1)
-        elif 'backward' in data:
-            colorWipe(strip, Color(255,0,0))
-            time.sleep(0.1)
-        if turn_status == 1:
-            strip.setPixelColor(0, Color(255,255,0))
-            strip.setPixelColor(1, Color(255,255,0))
-            strip.setPixelColor(2, Color(255,255,0))
-        elif turn_status == 2:
-            strip.setPixelColor(3, Color(255,255,0))
-            strip.setPixelColor(4, Color(255,255,0))
-            strip.setPixelColor(5, Color(255,255,0))
+        if 'forward' in command:
+            rainbowCycle(ledStrip,1 ,1)
+        elif 'backward' in command:
+            colorWipe(ledStrip, rpi_ws281x.Color(255,0,0))
+        elif turn_status == NO_TURN:
+            ledStrip.setPixelColor(0, rpi_ws281x.Color(0,0,0))
+            ledStrip.setPixelColor(1, rpi_ws281x.Color(0,0,0))
+            ledStrip.setPixelColor(2, rpi_ws281x.Color(0,0,0))
+            ledStrip.setPixelColor(3, rpi_ws281x.Color(0,0,0))
+            ledStrip.setPixelColor(4, rpi_ws281x.Color(0,0,0))
+            ledStrip.setPixelColor(5, rpi_ws281x.Color(0,0,0))
+            ledStrip.show()
+        elif turn_status == LEFT_TURN:
+            ledStrip.setPixelColor(0, rpi_ws281x.Color(255,255,0))
+            ledStrip.setPixelColor(1, rpi_ws281x.Color(255,255,0))
+            ledStrip.setPixelColor(2, rpi_ws281x.Color(255,255,0))
+            ledStrip.setPixelColor(3, rpi_ws281x.Color(0,0,0))
+            ledStrip.setPixelColor(4, rpi_ws281x.Color(0,0,0))
+            ledStrip.setPixelColor(5, rpi_ws281x.Color(0,0,0))
+            ledStrip.show()
+        elif turn_status == RIGHT_TURN:
+            ledStrip.setPixelColor(0, rpi_ws281x.Color(0,0,0))
+            ledStrip.setPixelColor(1, rpi_ws281x.Color(0,0,0))
+            ledStrip.setPixelColor(2, rpi_ws281x.Color(0,0,0))
+            ledStrip.setPixelColor(3, rpi_ws281x.Color(255,255,0))
+            ledStrip.setPixelColor(4, rpi_ws281x.Color(255,255,0))
+            ledStrip.setPixelColor(5, rpi_ws281x.Color(255,255,0))
+            ledStrip.show()
         else:
             pass
         time.sleep(0.1)
@@ -389,28 +385,28 @@ def blinkHeadlights():
     global blinkThreadStatus
 
     blinkThreadStatus = BLINK_THREAD_RUNNING
-    led.both_off()
+    headlights.turn(headlights.BOTH, headlights.OFF)
     while blinkThreadStatus != BLINK_THREAD_STOP:
-        led.side_on(led.left_R)
+        headlights.turn(headlights.LEFT, headlights.RED)
         for i in range(10):
             time.sleep(.1)
             if blinkThreadStatus == BLINK_THREAD_STOP:
                 blinkThreadStatus = BLINK_THREAD_STOPPED
                 return
-        led.side_off(led.left_R)
-        led.side_on(led.right_R)
+        headlights.turn(headlights.LEFT, headlights.OFF)
+        headlights.turn(headlights.RIGHT, headlights.RED)
         for i in range(10):
             time.sleep(.1)
             if blinkThreadStatus == BLINK_THREAD_STOP:
                 blinkThreadStatus = BLINK_THREAD_STOPPED
                 return
-        led.side_off(led.right_R)
+        headlights.turn(headlights.RIGHT, headlights.OFF)
     blinkThreadStatus = BLINK_THREAD_STOPPED
 
 
 def run():                   #Main loop
     global hoz_mid, vtr_mid, ip_con, led_status, auto_status, opencv_mode, findline_mode, speech_mode, \
-           auto_mode, data,addr, footage_socket, ap_status, turn_status, wifi_status, blinkThreadStatus
+           auto_mode, command, addr, footage_socket, ap_status, turn_status, wifi_status, blinkThreadStatus
     
     while True:              #Connection
         try:
@@ -425,8 +421,7 @@ def run():                   #Main loop
                 ap_threading=threading.Thread(target=ap_thread)   #Define a thread for wifi hot spot
                 ap_threading.setDaemon(True)                      #True means it is a front thread,it would close when the mainloop() closes
                 ap_threading.start()                                  #Thread starts
-                led.both_off()
-                led.yellow()
+                headlights.turn(headlights.BOTH, headlights.YELLOW)
                 time.sleep(5)
                 wifi_status = 0
             
@@ -440,20 +435,17 @@ def run():                   #Main loop
             while blinkThreadStatus != BLINK_THREAD_STOPPED:
                 blinkThreadStatus = BLINK_THREAD_STOP
                 time.sleep(.1)
-            led.both_off()
-            led.green()
+            headlights.turn(headlights.BOTH, headlights.GREEN)
             print('...connected from :', addr)
             #time.sleep(1)
             tcpCliSock.send(('SET %s'%vtr_mid+' %s'%hoz_mid+' %s'%left_spd+' %s'%right_spd+' %s'%look_up_max+' %s'%look_down_max+' %s'%servos.turn_middle).encode())
             print('SET %s'%vtr_mid+' %s'%hoz_mid+' %s'%left_spd+' %s'%right_spd+' %s'%look_up_max+' %s'%look_down_max+' %s'%servos.turn_middle)
             break
         else:
-            led.both_off()
-            led.blue()
+            headlights.turn(headlights.BOTH, headlights.BLUE)
             print('waiting for connection...')
             tcpCliSock, addr = tcpSerSock.accept()#Determine whether to connect
-            led.both_off()
-            led.green()
+            headlights.turn(headlights.BOTH, headlights.GREEN)
             print('...connected from :', addr)
             #time.sleep(1)
             tcpCliSock.send(('SET %s'%vtr_mid+' %s'%hoz_mid+' %s'%left_spd+' %s'%right_spd+' %s'%look_up_max+' %s'%look_down_max).encode())
@@ -494,28 +486,24 @@ def run():                   #Main loop
 
 
     while True: 
-        data = ''
-        data = tcpCliSock.recv(BUFSIZ).decode()
-        print("rcvd: %s" %data)
-        if not data:
+        command = tcpCliSock.recv(BUFSIZ).decode()
+        print("rcvd: %s" %command)
+        if not command:
             continue
-        elif 'exit' in data:
+        elif 'exit' in command:
             os.system("sudo shutdown -h now\n")
 
-        elif 'quit' in data:
-            led.both_off()
-            colorWipe(strip, Color(0,0,0))
-            #camera=picamera.PiCamera()
-            destroy()
-            camera.close()
-            sys.exit()
+        elif 'quit' in command:
+            print('shutting down')
+            cleanup()
+            return
 
-        elif 'spdset' in data:
+        elif 'spdset' in command:
             global spd_adj
-            spd_adj=float((str(data))[7:])      #Speed Adjustment
+            spd_adj=float((str(command))[7:])      #Speed Adjustment
             print("speed adjustment set to %s" %str(spd_adj))
 
-        elif 'scan' in data:
+        elif 'scan' in command:
             dis_can=scan()                     #Start Scanning
             str_list_1=dis_can                 #Divide the list to make it samller to send 
             str_index=' '                      #Separate the values by space
@@ -523,146 +511,132 @@ def run():                   #Main loop
             tcpCliSock.sendall((str(str_send_1)).encode())   #Send Data
             tcpCliSock.send('finished'.encode())        #Sending 'finished' tell the client to stop receiving the list of dis_can
 
-        elif 'EC1set' in data:                 #Camera Adjustment
-            new_EC1=int((str(data))[7:])
+        elif 'EC1set' in command:                 #Camera Adjustment
+            new_EC1=int((str(command))[7:])
             servos.camera_turn(new_EC1)
             config.exportConfig('E_C1', new_EC1)
 
-        elif 'EC2set' in data:                 #Ultrasonic Adjustment
-            new_EC2=int((str(data))[7:])
+        elif 'EC2set' in command:                 #Ultrasonic Adjustment
+            new_EC2=int((str(command))[7:])
             config.exportConfig('E_C2', new_EC2)
             servos.ultra_turn(new_EC2)
 
-        elif 'EM1set' in data:                 #Motor A Speed Adjustment
-            new_EM1=int((str(data))[7:])
+        elif 'EM1set' in command:                 #Motor A Speed Adjustment
+            new_EM1=int((str(command))[7:])
             config.exportConfig('E_M1', new_EM1)
 
-        elif 'EM2set' in data:                 #Motor B Speed Adjustment
-            new_EM2=int((str(data))[7:])
+        elif 'EM2set' in command:                 #Motor B Speed Adjustment
+            new_EM2=int((str(command))[7:])
             config.exportConfig('E_M2', new_EM2)
 
-        elif 'LUMset' in data:                 #Motor A Turning Speed Adjustment
-            new_ET1=int((str(data))[7:])
+        elif 'LUMset' in command:                 #Motor A Turning Speed Adjustment
+            new_ET1=int((str(command))[7:])
             config.exportConfig('look_up_max', new_ET1)
             servos.camera_turn(new_ET1)
 
-        elif 'LDMset' in data:                 #Motor B Turning Speed Adjustment
-            new_ET2=int((str(data))[7:])
+        elif 'LDMset' in command:                 #Motor B Turning Speed Adjustment
+            new_ET2=int((str(command))[7:])
             config.exportConfig('look_down_max', new_ET2)
             servos.camera_turn(new_ET2)
 
-        elif 'STEERINGset' in data:            #Motor Steering center Adjustment
-            new_Steering = int((str(data))[12:])
+        elif 'STEERINGset' in command:            #Motor Steering center Adjustment
+            new_Steering = int((str(command))[12:])
             config.exportConfig('turn_middle', new_Steering)
             servos.turn_middle = new_Steering
             servos.middle()
 
-        elif 'stop' in data:                   #When server receive "stop" from client,car stops moving
+        elif 'stop' in command:                   #When server receive "stop" from client,car stops moving
             tcpCliSock.send('9'.encode())
-            setup()
             motor.motorStop()
-            setup()
+            #setup()
             if led_status == 0:
-                led.setup()
-                led.both_off()
-            colorWipe(strip, Color(0,0,0))
-            continue
+                headlights.turn(headlights.BOTH, headlights.OFF)
+            colorWipe(ledStrip, rpi_ws281x.Color(0,0,0))
         
-        elif 'lightsON' in data:               #Turn on the LEDs
-            led.both_on()
+        elif 'lightsON' in command:               #Turn on the LEDs
+            headlights.turn(headlights.BOTH, headlights.WHITE)
             led_status=1
             tcpCliSock.send('lightsON'.encode())
 
-        elif 'lightsOFF'in data:               #Turn off the LEDs
-            led.both_off()
+        elif 'lightsOFF'in command:               #Turn off the LEDs
+            headlights.turn(headlights.BOTH, headlights.OFF)
             led_status=0
             tcpCliSock.send('lightsOFF'.encode())
 
-        elif 'middle' in data:                 #Go straight
-            if led_status == 0:
-                led.side_color_off(left_R,left_G)
-                led.side_color_off(right_R,right_G)
-            else:
-                led.side_on(left_B)
-                led.side_on(right_B)
-            turn_status = 0
+        elif 'middle' in command:                 #Go straight
+            headlights.turn(headlights.BOTH, headlights.BLUE)
+            turn_status = NO_TURN
             servos.middle()
         
-        elif 'SteerLeft' in data:              #Turn more to the left
-            if led_status == 0:
-                led.side_color_on(left_R,left_G)
-            else:
-                led.side_off(left_B)
+        elif 'SteerLeft' in command:              #Turn more to the left
+            headlights.turn(headlights.RIGHT, headlights.OFF)
+            headlights.turn(headlights.LEFT, headlights.YELLOW)
             servos.turn_ang(servos.heading+turn_speed)
+            turn_status = LEFT_TURN
 
-        elif 'SteerRight' in data:              #Turn more to the Right
-            if led_status == 0:
-                led.side_color_on(right_R,right_G)
-            else:
-                led.side_off(right_B)
+        elif 'SteerRight' in command:              #Turn more to the Right
+            headlights.turn(headlights.LEFT, headlights.OFF)
+            headlights.turn(headlights.RIGHT, headlights.YELLOW)
             servos.turn_ang(servos.heading-turn_speed)
+            turn_status = RIGHT_TURN
 
-        elif 'Left' in data:                   #Turn hard left
-            if led_status == 0:
-                led.side_color_on(left_R,left_G)
-            else:
-                led.side_off(left_B)
+        elif 'Left' in command:                   #Turn hard left
+            headlights.turn(headlights.RIGHT, headlights.OFF)
+            headlights.turn(headlights.LEFT, headlights.YELLOW)
             servos.left()
-            turn_status=1
+            turn_status = LEFT_TURN
             tcpCliSock.send('3'.encode())
         
-        elif 'Right' in data:                  #Turn hard right
-            if led_status == 0:
-                led.side_color_on(right_R,right_G)
-            else:
-                led.side_off(right_B)
+        elif 'Right' in command:                  #Turn hard right
+            headlights.turn(headlights.LEFT, headlights.OFF)
+            headlights.turn(headlights.RIGHT, headlights.YELLOW)
             servos.right()
-            turn_status=2
+            turn_status = RIGHT_TURN
             tcpCliSock.send('4'.encode())
         
-        elif 'backward' in data:               #When server receive "backward" from client,car moves backward
+        elif 'backward' in command:               #When server receive "backward" from client,car moves backward
             tcpCliSock.send('2'.encode())
-            motor.motorLeft(status, backward, left_spd*spd_adj)
-            motor.motorRight(status, forward, right_spd*spd_adj)
-            colorWipe(strip, Color(255,0,0))
+            motor.motorLeft(motor.BACKWARD, left_spd*spd_adj)
+            motor.motorRight(motor.FORWARD, right_spd*spd_adj)
+            #colorWipe(ledStrip, rpi_ws281x.Color(255,0,0))
 
-        elif 'forward' in data:                #When server receive "forward" from client,car moves forward
+        elif 'forward' in command:                #When server receive "forward" from client,car moves forward
             tcpCliSock.send('1'.encode())
-            motor.motorLeft(status, forward,left_spd*spd_adj)
-            motor.motorRight(status,backward,right_spd*spd_adj)
-            colorWipe(strip, Color(0,0,255))
+            motor.motorLeft(motor.FORWARD, left_spd*spd_adj)
+            motor.motorRight(motor.BACKWARD, right_spd*spd_adj)
+            #colorWipe(ledStrip, rpi_ws281x.Color(0,0,255))
 
-        elif 'l_up' in data:                   #Camera look up
+        elif 'l_up' in command:                   #Camera look up
             if vtr_mid< look_up_max:
                 vtr_mid+=turn_speed
             servos.camera_turn(vtr_mid)
             tcpCliSock.send('5'.encode())
 
-        elif 'l_do' in data:                   #Camera look down
+        elif 'l_do' in command:                   #Camera look down
             if vtr_mid> look_down_max:
                 vtr_mid-=turn_speed
             servos.camera_turn(vtr_mid)
             print(vtr_mid)
             tcpCliSock.send('6'.encode())
 
-        elif 'l_le' in data:                   #Camera look left
+        elif 'l_le' in command:                   #Camera look left
             if hoz_mid< look_left_max:
                 hoz_mid+=turn_speed
             servos.ultra_turn(hoz_mid)
             tcpCliSock.send('7'.encode())
 
-        elif 'l_ri' in data:                   #Camera look right
+        elif 'l_ri' in command:                   #Camera look right
             if hoz_mid> look_right_max:
                 hoz_mid-=turn_speed
             servos.ultra_turn(hoz_mid)
             tcpCliSock.send('8'.encode())
 
-        elif 'ahead' in data:                  #Camera look ahead
+        elif 'ahead' in command:                  #Camera look ahead
             servos.ahead()
             vtr_mid = vtr_mid_orig
             hoz_mid = hoz_mid_orig
 
-        elif 'Stop' in data:                   #When server receive "Stop" from client,Auto Mode switches off
+        elif 'Stop' in command:                   #When server receive "Stop" from client,Auto Mode switches off
             opencv_mode   = 0
             findline_mode = 0
             speech_mode   = 0
@@ -671,55 +645,49 @@ def run():                   #Main loop
             dis_scan = 1
             tcpCliSock.send('auto_status_off'.encode())
             motor.motorStop()
-            led.both_off()
+            headlights.turn(headlights.BOTH, headlights.OFF)
             servos.middle()
-            time.sleep(0.1)
-            motor.motorStop()
-            led.both_off()
-            servos.middle()
+            turn_status = NO_TURN
         
-        elif 'auto' in data:                   #When server receive "auto" from client,start Auto Mode
+        elif 'auto' in command:                   #When server receive "auto" from client,start Auto Mode
             if auto_status == 0:
                 tcpCliSock.send('0'.encode())
                 auto_status = 1
                 auto_mode = 1
                 dis_scan = 0
-            else:
-                pass
-            continue
 
-        elif 'opencv' in data:                 #When server receive "auto" from client,start Auto Mode
+        elif 'opencv' in command:                 #When server receive "auto" from client,start Auto Mode
             if auto_status == 0:
                 auto_status = 1
                 opencv_mode = 1                  
                 tcpCliSock.send('oncvon'.encode())
-            continue
 
-        elif 'findline' in data:               #Find line mode start
+        elif 'findline' in command:               #Find line mode start
             if auto_status == 0:
                 tcpCliSock.send('findline'.encode())
                 auto_status = 1
                 findline_mode = 1
-            else:
-                pass
-            continue
 
-        elif 'voice_3' in data:                #Speech recognition mode start
+        elif 'voice_3' in command:                #Speech recognition mode start
             if auto_status == 0:
                 auto_status = 1
                 speech_mode = 1
                 tcpCliSock.send('voice_3'.encode())
-            else:
-                pass
-            continue
 
 
 def cleanup():
-    led.both_off()
+    colorWipe(ledStrip, rpi_ws281x.Color(0,0,0))
+    headlights.turn(headlights.BOTH, headlights.OFF)
+    try:
+        camera.close()
+    except:
+        pass      # ignore known random exception in picamera library
+    GPIO.cleanup()
 
 
 if __name__ == '__main__':
     print("robot server starting")
+
     #atexit.register(cleanup)
     vtr_mid = config.importConfigInt('E_C1')
     hoz_mid = config.importConfigInt('E_C2')
@@ -731,15 +699,16 @@ if __name__ == '__main__':
     vtr_mid_orig = vtr_mid
     hoz_mid_orig = hoz_mid
 
+
+    #Start server, and wait for client
     HOST = ''
     PORT = 10223                              #Define port serial 
     BUFSIZ = 1024                             #Define buffer size
     ADDR = (HOST, PORT)
-
     tcpSerSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    tcpSerSock.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
+    tcpSerSock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     tcpSerSock.bind(ADDR)
-    tcpSerSock.listen(5)                      #Start server,waiting for client
+    tcpSerSock.listen(5)                      
 
     camera = picamera.PiCamera()              #Camera initialization
     camera.resolution = (640, 480)
@@ -750,8 +719,7 @@ if __name__ == '__main__':
     colorUpper = (44, 255, 255)               #USE HSV value NOT RGB
 
     ap = argparse.ArgumentParser()            #OpenCV initialization
-    ap.add_argument("-b", "--buffer", type=int, default=64,
-        help="max buffer size")
+    ap.add_argument("-b", "--buffer", type=int, default=64, help="max buffer size")
     args = vars(ap.parse_args())
     pts = deque(maxlen=args["buffer"])
     time.sleep(0.1)
@@ -759,32 +727,28 @@ if __name__ == '__main__':
     # LED strip configuration:
     LED_COUNT      = 12      # Number of LED pixels.
     LED_PIN        = 12      # GPIO pin connected to the pixels (18 uses PWM!).
-    #LED_PIN        = 10      # GPIO pin connected to the pixels (10 uses SPI /dev/spidev0.0).
     LED_FREQ_HZ    = 800000  # LED signal frequency in hertz (usually 800khz)
     LED_DMA        = 10      # DMA channel to use for generating signal (try 10)
     LED_BRIGHTNESS = 255     # Set to 0 for darkest and 255 for brightest
     LED_INVERT     = False   # True to invert the signal (when using NPN transistor level shift)
     LED_CHANNEL    = 0       # set to '1' for GPIOs 13, 19, 41, 45 or 53
-
+    # Create NeoPixel object with appropriate configuration.
+    ledStrip = rpi_ws281x.Adafruit_NeoPixel(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
+    # Intialize the library (must be called once before other functions).
+    ledStrip.begin()
+    
     # Process arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--clear', action='store_true', help='clear the display on exit')
     args = parser.parse_args()
 
-    # Create NeoPixel object with appropriate configuration.
-    strip = Adafruit_NeoPixel(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
-    # Intialize the library (must be called once before other functions).
-    strip.begin()
     setup()
     try:
         run()
     except KeyboardInterrupt:
+        print("keyboard interrupt")
         if ap_status == 1:
             os.system("sudo shutdown -h now\n")
             time.sleep(5)
-            print('shutdown')
-        colorWipe(strip, Color(0,0,0))
-        #camera=picamera.PiCamera()
-        camera.close()
-        led.both_off()
-        destroy()
+        print('shutting down')
+        cleanup()
