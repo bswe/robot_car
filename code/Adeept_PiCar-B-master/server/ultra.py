@@ -12,28 +12,15 @@ import config
 import RPi.GPIO as GPIO
 import time
 import motor
-import servos, led
-
-#Set GPIO for Leds
-left_R = 29
-left_G = 31
-left_B = 33
-
-right_R = 16
-right_G = 18
-right_B = 15
+import servos, headlights
 
 #Set for motors
 left_spd   = config.importConfigInt('E_M1')         #Speed of the car
 right_spd  = config.importConfigInt('E_M2')         #Speed of the car
 left       = config.importConfigInt('E_T1')         #Motor Left
 right      = config.importConfigInt('E_T2')         #Motor Right
-pwm0     = 0
-pwm1     = 1
-status   = 1    
-forward  = 0
-backward = 1
-spd_ad_u   = 1
+
+spd_ad_u = 1
 Tr = 23
 Ec = 24
 
@@ -54,15 +41,15 @@ def checkdist():       #Reading distance
 
 def setup():          #initialization
     motor.setup()
-    led.setup()
+    headlights.setup()
 
 def destroy():        #motor stops when this program exit
     motor.destroy()
     GPIO.cleanup()
 
-def loop(distance_stay,distance_range):   #Tracking with Ultrasonic
+def loop(distance_stay, distance_range):   #Tracking with Ultrasonic
     motor.setup()
-    led.setup()
+    headlights.setup()
     servos.ahead()
     servos.middle()
     dis = checkdist()
@@ -73,25 +60,22 @@ def loop(distance_stay,distance_range):   #Tracking with Ultrasonic
             if moving_time > 1:
                 moving_time = 1
             print('mf')
-            led.both_off()
-            led.cyan()
-            motor.motorLeft(status, backward,left_spd*spd_ad_u)
-            motor.motorRight(status,forward,right_spd*spd_ad_u)
+            headlights.turn(headlights.BOTH, headlights.CYAN)
+            motor.motorLeft(motor.BACKWARD, left_spd*spd_ad_u)
+            motor.motorRight(motor.FORWARD, right_spd*spd_ad_u)
             time.sleep(moving_time)
             motor.motorStop()
         elif dis < (distance_stay-0.1) : #Check if the target is too close, if so, the car move back to keep distance at distance_stay
             moving_time = (distance_stay-dis)/0.38
             print('mb')
-            led.both_off()
-            led.pink()
-            motor.motorLeft(status, forward,left_spd*spd_ad_u)
-            motor.motorRight(status,backward,right_spd*spd_ad_u)
+            headlights.turn(headlights.BOTH, headlights.PINK)
+            motor.motorLeft(motor.FORWARD, left_spd*spd_ad_u)
+            motor.motorRight(motor.BACKWARD, right_spd*spd_ad_u)
             time.sleep(moving_time)
             motor.motorStop()
         else:                            #If the target is at distance, then the car stay still
             motor.motorStop()
-            led.both_off()
-            led.yellow()
+            headlights.turn(headlights.BOTH, headlights.YELLOW)
     else:
         motor.motorStop()
 
