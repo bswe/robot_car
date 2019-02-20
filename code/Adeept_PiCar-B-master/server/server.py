@@ -636,7 +636,7 @@ def run():                   #Main loop
             vtr_mid = vtr_mid_orig
             hoz_mid = hoz_mid_orig
 
-        elif 'Stop' in command:                   #When server receive "Stop" from client,Auto Mode switches off
+        elif 'Off' in command:                   #When server receive "Off" from client, Auto Mode switches off
             opencv_mode   = 0
             findline_mode = 0
             speech_mode   = 0

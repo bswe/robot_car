@@ -331,7 +331,7 @@ def sendBackward(event):            #When this function is called, client comman
     tcpClicSock.send(('backward').encode())
 
 
-def sendstop(event):            #When this function is called, client commands the car to stop moving
+def sendStop(event):            #When this function is called, client commands the car to stop moving
     tcpClicSock.send(('stop').encode())
 
 
@@ -379,8 +379,8 @@ def sendExit(event):            #When this function is called, client commands t
     tcpClicSock.send(('exit').encode())
 
 
-def sendStop(event):            #When this function is called, client commands the car to switch off auto mode
-    tcpClicSock.send(('Stop').encode())
+def sendOff(event):            #When this function is called, client commands the car to switch off auto mode
+    tcpClicSock.send(('Off').encode())
 
 
 def sendScan(event):                 #When this function is called, client commands the ultrasonic to scan
@@ -472,6 +472,7 @@ def voice_input():
                                                        ('left turn', 1.0),
                                                        ('right turn', 1.0),
                                                        ('stop', 1.0),
+                                                       ('off', 1.0),
                                                        ('find line', 0.50),  # find line
                                                        ('follow', 1),
                                                        ('head lights', 1)])      
@@ -501,6 +502,8 @@ def voiceCommand(event):
         sendRight()
     elif v_command.startswith('stop'):
         sendStop()
+    elif v_command.startswith('off'):
+        sendOff()
     elif v_command.startswith('find'):
         sendFindLine()
     elif v_command.startswith('follow'):
@@ -696,8 +699,8 @@ def init():
     buttonHeadlights = tk.Button(window, width=BTN_WIDTH_1, text='Headlights', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     buttonHeadlights.place(x=330, y=420)
 
-    buttonStop = tk.Button(window, width=BTN_WIDTH_1, text='Stop', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    buttonStop.place(x=255, y=420)
+    buttonOff = tk.Button(window, width=BTN_WIDTH_1, text='Off', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    buttonOff.place(x=255, y=420)
 
     buttonFollow = tk.Button(window, width=BTN_WIDTH_1, text='Follow', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     buttonFollow.place(x=180, y=420)
@@ -735,7 +738,7 @@ def init():
     buttonBackward.bind('<ButtonPress-1>', sendBackward)
     buttonMaxLeft.bind('<ButtonPress-1>', sendLeft)
     buttonMaxRight.bind('<ButtonPress-1>', sendRight)
-    buttonStop.bind('<ButtonPress-1>', sendStop)
+    buttonOff.bind('<ButtonPress-1>', sendOff)
     buttonFollow.bind('<ButtonPress-1>', sendAuto)
     buttonHeadLeft.bind('<ButtonPress-1>', sendLookLeft)
     buttonHeadRight.bind('<ButtonPress-1>', sendLookRight)
@@ -757,11 +760,10 @@ def init():
     buttonHeadlights.bind('<ButtonPress-1>', sendHeadlights)
 
     # bind for button release
-    buttonForward.bind('<ButtonRelease-1>', sendstop)
-    buttonBackward.bind('<ButtonRelease-1>', sendstop)
-    buttonMaxLeft.bind('<ButtonRelease-1>', sendstop)
-    buttonMaxRight.bind('<ButtonRelease-1>', sendstop)
-    buttonStop.bind('<ButtonRelease-1>', sendstop)
+    buttonForward.bind('<ButtonRelease-1>', sendStop)
+    buttonBackward.bind('<ButtonRelease-1>', sendStop)
+    buttonMaxLeft.bind('<ButtonRelease-1>', sendStop)
+    buttonMaxRight.bind('<ButtonRelease-1>', sendStop)
 
     # Bind the keys with the corresponding callback function
     window.bind('<KeyPress-w>', sendForward) 
@@ -772,16 +774,16 @@ def init():
     window.bind('<KeyPress-e>', sendSteerRight)
 
     # When these keys is released,call the function sendstop()
-    window.bind('<KeyRelease-w>', sendstop)
+    window.bind('<KeyRelease-w>', sendStop)
     window.bind('<KeyRelease-a>', sendMiddle)
     window.bind('<KeyRelease-d>', sendMiddle)
-    window.bind('<KeyRelease-s>', sendstop)
+    window.bind('<KeyRelease-s>', sendStop)
     window.bind('<KeyRelease-h>', sendHeadlights)
     window.bind('<KeyRelease-f>', sendFindLine)
     window.bind('<KeyRelease-v>', voiceCommand)
 
     # Press these keyss to call the corresponding function()
-    window.bind('<KeyPress-c>', sendStop)
+    window.bind('<KeyPress-c>', sendOff)
     window.bind('<KeyPress-z>', sendAuto) 
     window.bind('<KeyPress-j>', sendLookLeft)
     window.bind('<KeyPress-l>', sendLookRight)
@@ -790,7 +792,7 @@ def init():
     window.bind('<KeyPress-i>', sendLookUp)
     window.bind('<KeyPress-x>', sendScan)
     window.bind('<Return>', connect)
-    window.bind('<Shift-c>', sendstop)
+    window.bind('<Shift-c>', sendStop)
 
 
 # Main program body    
