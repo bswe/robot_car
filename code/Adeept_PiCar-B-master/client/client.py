@@ -63,18 +63,6 @@ l_VIN = None
 BtnVIN = None
 Steering = None
 
-#Global variables of input status
-c_f_stu=0
-c_b_stu=0
-c_l_stu=0
-c_r_stu=0
-
-b_l_stu=0
-b_r_stu=0
-
-l_stu=0
-r_stu=0
-
 led_status      = 0
 opencv_status   = 0
 auto_status     = 0
@@ -82,12 +70,187 @@ speech_status   = 0
 findline_status = 0
 
 
-def video_show():
+def processList(code_car):
+    dis_list = []
+    f_list = []
+    list_str = code_car.decode()
+    
+    while  True:                    #Save scan result in dis_list
+        code_car = tcpClicSock.recv(BUFFER_SIZE)
+        if 'finished' in str(code_car):
+            break
+        list_str += code_car.decode()
+        labelStatus.config(text='Scanning')
+    
+    dis_list = list_str.split()       #Save the data as a list
+    labelStatus.config(text='Finished')
+    
+    for i in range (0, len(dis_list)):   #Translate the String-type value in the list to Float-type
+        try:
+            new_f = float(dis_list[i])
+            f_list.append(new_f)
+        except:
+            continue
+    
+    dis_list = f_list
+    #can_scan.delete(line)
+    #can_scan.delete(point_scan)
+    # define a canvas
+    can_scan_1 = tk.Canvas(window, bg=CANVAS_COLOR, height=250, width=320, highlightthickness=0) 
+    can_scan_1.place(x=440,y=330) #Place the canvas
+    line = can_scan_1.create_line(0, 62, 320, 62, fill='darkgray')   #Draw a line on canvas
+    line = can_scan_1.create_line(0, 124, 320, 124, fill='darkgray') #Draw a line on canvas
+    line = can_scan_1.create_line(0, 186, 320, 186, fill='darkgray') #Draw a line on canvas
+    line = can_scan_1.create_line(160, 0, 160, 250, fill='darkgray') #Draw a line on canvas
+    line = can_scan_1.create_line(80, 0, 80, 250, fill='darkgray')   #Draw a line on canvas
+    line = can_scan_1.create_line(240, 0, 240, 250, fill='darkgray') #Draw a line on canvas
+
+    x_range = var_x_scan.get()          #Get the value of scan range from IntVar
+
+    for i in range (0, len(dis_list)):   #Scale the result to the size as canvas
+        try:
+            len_dis_1 = int((dis_list[i]/x_range)*250)                   #600 is the height of canvas
+            pos       = int((i/len(dis_list))*320)                       #740 is the width of canvas
+            pos_ra    = int(((i/len(dis_list))*140)+20)                  #Scale the direction range to (20-160)
+            len_dis   = int(len_dis_1*(math.sin(math.radians(pos_ra))))  #len_dis is the height of the line
+
+            x0_l, y0_l, x1_l, y1_l = pos, (250-len_dis), pos, (250-len_dis)       #The position of line
+            x0, y0, x1, y1 = (pos+3), (250-len_dis+3), (pos-3), (250-len_dis-3)   #The position of arc
+
+            if pos <= 160:                                                      #Scale the whole picture to a shape of sector
+                pos = 160-abs(int(len_dis_1*(math.cos(math.radians(pos_ra)))))
+                x1_l = (x1_l-math.cos(math.radians(pos_ra))*130)
+            else:
+                pos = abs(int(len_dis_1*(math.cos(math.radians(pos_ra)))))+160
+                x1_l = x1_l+abs(math.cos(math.radians(pos_ra))*130)
+
+            y1_l = y1_l-abs(math.sin(math.radians(pos_ra))*130)              #Orientation of line
+
+            line = can_scan_1.create_line(pos, y0_l, x1_l, y1_l, fill=LINE_COLOR)   #Draw a line on canvas
+            #Draw a arc on canvas
+            point_scan = can_scan_1.create_oval((pos+3), y0, (pos-3), y1, fill=OVAL_COLOR, outline=OVAL_COLOR) 
+        except:
+            pass
+    can_tex_11 = can_scan_1.create_text((27,178), text='%sm'%round((x_range/4),2), fill='#aeea00')     #Create a text on canvas
+    can_tex_12 = can_scan_1.create_text((27,116), text='%sm'%round((x_range/2),2), fill='#aeea00')     #Create a text on canvas
+    can_tex_13 = can_scan_1.create_text((27,54), text='%sm'%round((x_range*0.75),2), fill='#aeea00')   #Create a text on canvas
+
+
+def receiveThread():     # Thread for receiving and processing data from server
+    global led_status, findline_status, auto_status, opencv_status, speech_status
+    
+    while True:
+        try:
+            code_car = tcpClicSock.recv(BUFFER_SIZE) #Listening,and save the data in 'code_car'
+        except Exception:
+            print ("got socket exception in code _receive thread, will terminate thread")
+            exit()
+        if not code_car:
+            continue
+        labelStatus.config(text=code_car)          #Put the data on the label
+        print("recvd from robot: " + str(code_car))
+
+        if 'SET' in str(code_car):
+            set_list=code_car.decode()
+            set_list=set_list.split()
+            s1,s2,s3,s4,s5,s6,s7=set_list[1:]
+            E_C1.delete(0, 50)
+            E_C2.delete(0, 50)
+            E_M1.delete(0, 50)
+            E_M2.delete(0, 50)
+            E_T1.delete(0, 50)
+            E_T2.delete(0, 50)
+            Steering.delete(0, 50)
+
+            E_C1.insert ( 0, '%d'%int(s1) ) 
+            E_C2.insert ( 0, '%d'%int(s2) ) 
+            E_M1.insert ( 0, '%d'%int(s3) ) 
+            E_M2.insert ( 0, '%d'%int(s4) )
+            E_T1.insert ( 0, '%d'%int(s5) ) 
+            E_T2.insert ( 0, '%d'%int(s6) )
+            Steering.insert ( 0, '%d'%int(s7) )
+
+        elif 'list' in str(code_car):         # Scan result receiving start
+            processList(code_car)
+
+        elif 'voice_3' in str(code_car):         # put this case before the numbers below because of the 3
+            BtnSR3.config(fg='#0277BD', bg='#BBDEFB')
+            labelStatus.config(text='Sphinx SR')        #Put the text on the label
+            speech_status = 1
+
+        elif 'findline' in str(code_car):        #Translate the code to text
+            BtnFL.config(text='Finding', fg='#0277BD', bg='#BBDEFB')
+            labelStatus.config(text='Find Line') 
+            findline_status = 1
+        
+        elif 'lightsON' in str(code_car):        #Translate the code to text
+            buttonHeadlights.config(text='Lights ON', fg='#0277BD', bg='#BBDEFB')
+            labelStatus.config(text='Lights On')        #Put the text on the label
+            led_status = 1
+        
+        elif 'lightsOFF' in str(code_car):        #Translate the code to text
+            buttonHeadlights.config(text='Lights OFF', fg=TEXT_COLOR, bg=BUTTON_COLOR)
+            labelStatus.config(text='Lights OFF')        #Put the text on the label
+            led_status = 0
+
+        elif 'oncvon' in str(code_car):
+            BtnOCV.config(text='OpenCV ON', fg='#0277BD', bg='#BBDEFB')
+            BtnFL.config(text='Find Line', fg=TEXT_COLOR, bg=BUTTON_COLOR)
+            labelStatus.config(text='OpenCV ON')
+            opencv_status = 1
+
+        elif 'auto_status_off' in str(code_car):
+            BtnSR3.config(fg=TEXT_COLOR, bg=BUTTON_COLOR, state='normal')
+            BtnOCV.config(text='OpenCV', fg=TEXT_COLOR, bg=BUTTON_COLOR, state='normal')
+            BtnFL.config(text='Find Line', fg=TEXT_COLOR, bg=BUTTON_COLOR)
+            buttonFollow.config(text='Follow', fg=TEXT_COLOR, bg=BUTTON_COLOR, state='normal')
+            findline_status = 0
+            speech_status   = 0
+            opencv_status   = 0
+            auto_status     = 0
+            led_status      = 0
+
+        # put these checks for numbers after everthing else because numbers could be in many of these messages
+        # TODO; been bitten by this several times, need to change these to something more robust
+        elif '0' in str(code_car):               #Translate the code to text
+            labelStatus.config(text='Follow Mode On')     #Put the text on the label
+            buttonFollow.config(text='Following', fg='#0277BD', bg='#BBDEFB')
+            auto_status = 1
+
+        elif '1' in str(code_car):               #Translate the code to text
+            labelStatus.config(text='Moving Forward')   #Put the text on the label
+
+        elif '2' in str(code_car):               #Translate the code to text
+            labelStatus.config(text='Moving Backward')  #Put the text on the label
+
+        elif '3' in str(code_car):               #Translate the code to text
+            labelStatus.config(text='Turning Left')     #Put the text on the label
+
+        elif '4' in str(code_car):               #Translate the code to text
+            labelStatus.config(text='Turning Right')    #Put the text on the label
+
+        elif '5' in str(code_car):               #Translate the code to text
+            labelStatus.config(text='Look Up')          #Put the text on the label
+
+        elif '6' in str(code_car):               #Translate the code to text
+            labelStatus.config(text='Look Down')        #Put the text on the label
+
+        elif '7' in str(code_car):               #Translate the code to text
+            labelStatus.config(text='Look Left')        #Put the text on the label
+
+        elif '8' in str(code_car):               #Translate the code to text
+            labelStatus.config(text='Look Right')       #Put the text on the label
+
+        elif '9' in str(code_car):               #Translate the code to text
+            labelStatus.config(text='Stop')             #Put the text on the label       
+
+
+def fpvThread():       # thread that displays incoming fpv video
     while True:
         try:
             frame = footage_socket.recv_string()
         except Exception:
-            print ("got socket exception in video_show thread, will exit thread")
+            print ("got socket exception in fpvThread, will exit thread")
             time.sleep(1)
             sys.exit()
         img = base64.b64decode(frame)
@@ -97,130 +260,200 @@ def video_show():
         cv2.waitKey(1)                
 
 
-def call_forward(event):         #When this function is called, client commands the car to move forward
-    global c_f_stu
-    if c_f_stu == 0:
-        tcpClicSock.send(('forward').encode())
-        c_f_stu=1
+def connectThread():           # Thread that tries to connect with the robot car server
+    global tcpClicSock, ip_entry
+    
+    buttonConnect.config(state='disabled') #Disable the Connect button while trying to connect
+    ip_adr=ip_entry.get()    #Get the IP address from Entry
+
+    if ip_adr == '':         #If no input IP address in Entry, try to import a default IP
+        ip_adr = config.importConfig('IP')
+        if ip_adr == None:
+            ip_adr = "0.0.0.0"
+        labelConnectionStatus.config(text='Connecting')
+        labelConnectionStatus.config(bg='#FF8F00')
+        labelIpAddress.config(text='Default:%s'%ip_adr)
+    
+    for i in range (1,6): # Retry 5 additional times if connection fails
+        try:
+            print("Connecting to server @ %s:%d..." %(ip_adr, SERVER_PORT))
+            address = (ip_adr, SERVER_PORT)
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #Set connection value for socket
+            s.connect(address)               #Connection with the server
+        
+            print("robot Connected")
+            tcpClicSock = s
+        
+            config.exportConfig('IP', ip_adr)
+            labelIpAddress.config(text='IP:%s'%ip_adr)
+            labelConnectionStatus.config(text='Connected')
+            labelConnectionStatus.config(bg='#558B2F')
+
+            ip_entry.config(state='disabled')      #Disable the Entry
+                    
+            at=thread.Thread(target=receiveThread) #Define a thread for data receiving
+            at.setDaemon(True)                     #True means it is a front thread, will close when mainloop() closes
+            at.start()                             #Thread starts
+
+            video_thread=thread.Thread(target=fpvThread) #Define a thread for receiving and displaying fpv video
+            video_thread.setDaemon(True)          #True means it is a front thread, will close when mainloop() closes
+            print('FPV Connected')
+            video_thread.start()                          #Thread starts
+            break
+
+        except Exception as e:
+            print(e)
+            print("Failed to connect to server!")
+            print('Tried %d/5 time(s)'%i)
+            labelConnectionStatus.config(text='Tried %d/5 time(s)'%i)
+            labelConnectionStatus.config(bg='#EF6C00')
+            tcpClicSock = None
+            time.sleep(1)
+            continue
+
+    if tcpClicSock == None:
+        labelConnectionStatus.config(text='Disconnected')
+        labelConnectionStatus.config(bg='#F44336')
+        buttonConnect.config(state='normal') #enable the Connect button
 
 
-def call_back(event):            #When this function is called, client commands the car to move backward
-    global c_b_stu 
-    if c_b_stu == 0:
-        tcpClicSock.send(('backward').encode())
-        c_b_stu=1
+def connect(event=None):       #Call this function to start thread to connect with the robot car server
+    sc=thread.Thread(target=connectThread)  #Define a thread for connection
+    sc.setDaemon(True)                      #True means it is a front thread, will close when mainloop() closes
+    sc.start()                              #Thread starts
 
 
-def call_stop(event):            #When this function is called, client commands the car to stop moving
-    global c_f_stu, c_b_stu
-    c_f_stu=0
-    c_b_stu=0
+def sendForward(event):         #When this function is called, client commands the car to move forward
+    tcpClicSock.send(('forward').encode())
+
+
+def sendBackward(event):            #When this function is called, client commands the car to move backward
+    tcpClicSock.send(('backward').encode())
+
+
+def sendstop(event):            #When this function is called, client commands the car to stop moving
     tcpClicSock.send(('stop').encode())
 
 
-def call_middle(event):            #When this function is called, client commands the car go straight
-    global c_l_stu, c_r_stu
-    c_r_stu=0
-    c_l_stu=0
+def sendMiddle(event):          #When this function is called, client commands the car go straight
     tcpClicSock.send(('middle').encode())
 
 
-def call_Left(event):            #When this function is called, client commands the car to turn left
-    global c_l_stu
-    print("call_Left: c_l_stu=%s" %str(c_l_stu))
-    if c_l_stu == 0 :
-        tcpClicSock.send(('Left').encode())
-        c_l_stu=1
-
-
-def call_Right(event):           #When this function is called, client commands the car to turn right
-    global c_r_stu
-    if c_r_stu == 0 :
-        tcpClicSock.send(('Right').encode())
-        c_r_stu=1
-
-
-def call_steer_Left(event):            #When this function is called, client commands the car to turn left
-    tcpClicSock.send(('SteerLeft').encode())
-
-
-def call_steer_Right(event):           #When this function is called, client commands the car to turn right
-    tcpClicSock.send(('SteerRight').encode())
-
-
-def click_call_Left(event):            #When this function is called, client commands the car to turn left
+def sendLeft(event):            #When this function is called, client commands the car to turn left
     tcpClicSock.send(('Left').encode())
 
 
-def click_call_Right(event):           #When this function is called, client commands the car to turn right
+def sendRight(event):           #When this function is called, client commands the car to turn right
     tcpClicSock.send(('Right').encode())
 
 
-def call_look_left(event):               #Camera look left
+def sendSteerLeft(event):            #When this function is called, client commands the car to turn left
+    tcpClicSock.send(('SteerLeft').encode())
+
+
+def sendSteerRight(event):           #When this function is called, client commands the car to turn right
+    tcpClicSock.send(('SteerRight').encode())
+
+
+def sendLookLeft(event):               #Camera look left
     tcpClicSock.send(('l_le').encode())
 
 
-def call_look_right(event):              #Camera look right
+def sendLookRight(event):              #Camera look right
     tcpClicSock.send(('l_ri').encode())
 
 
-def call_look_up(event):                 #Camera look up
+def sendLookUp(event):                 #Camera look up
     tcpClicSock.send(('l_up').encode())
 
 
-def call_look_down(event):               #Camera look down
+def sendLookDown(event):               #Camera look down
     tcpClicSock.send(('l_do').encode())
 
 
-def call_ahead(event):                   #Camera look ahead
+def sendLookAhead(event):                   #Camera look ahead
     tcpClicSock.send(('ahead').encode())
 
 
-def call_auto(event):            #When this function is called, client commands the car to start auto mode
-    if auto_status == 0:
-        tcpClicSock.send(('auto').encode())
-    else:
-        tcpClicSock.send(('Stop').encode())
-
-
-def call_exit(event):            #When this function is called, client commands the car to shut down
+def sendExit(event):            #When this function is called, client commands the car to shut down
     tcpClicSock.send(('exit').encode())
 
 
-def call_Stop(event):            #When this function is called, client commands the car to switch off auto mode
+def sendStop(event):            #When this function is called, client commands the car to switch off auto mode
     tcpClicSock.send(('Stop').encode())
 
 
-def scan(event):                 #When this function is called, client commands the ultrasonic to scan
+def sendScan(event):                 #When this function is called, client commands the ultrasonic to scan
     tcpClicSock.send(('scan').encode())
 
 
-def find_line(event):            #Line follow mode
+def sendSpeed():                 #Call this function for speed adjustment
+    tcpClicSock.send(('spdset:%s'%var_spd.get()).encode())   #Get a speed value from IntVar and send it to the car
+    labelSpeedStatus.config(text='Speed:%s'%var_spd.get())             #Put the speed value on the speed status label
+
+
+def sendEC1(event):            #Call this function for speed adjustment
+    tcpClicSock.send(('EC1set:%s'%E_C1.get()).encode())   #Get a speed value from IntVar and send it to the car
+
+
+def sendEC2(event):            #Call this function for speed adjustment
+    tcpClicSock.send(('EC2set:%s'%E_C2.get()).encode())   #Get a speed value from IntVar and send it to the car
+
+
+def sendEM1(event):            #Call this function for speed adjustment
+    tcpClicSock.send(('EM1set:%s'%E_M1.get()).encode())   #Get a speed value from IntVar and send it to the car
+
+
+def sendEM2(event):            #Call this function for speed adjustment
+    tcpClicSock.send(('EM2set:%s'%E_M2.get()).encode())   #Get a speed value from IntVar and send it to the car
+
+
+def sendET1(event):            #Call this function for speed adjustment
+    tcpClicSock.send(('LUMset:%s'%E_T1.get()).encode())   #Get a speed value from IntVar and send it to the car
+
+
+def sendET2(event):            #Call this function for speed adjustment
+    tcpClicSock.send(('LDMset:%s'%E_T2.get()).encode())   #Get a speed value from IntVar and send it to the car
+
+
+def sendSteering(event):            #Call this function for steering adjustment
+    tcpClicSock.send(('STEERINGset:%s'%Steering.get()).encode())   
+
+
+def sendFindLine(event):            #Line follow mode
     if findline_status == 0:
         tcpClicSock.send(('findline').encode())
     else:
         tcpClicSock.send(('Stop').encode())
 
 
-def Headlights(event):               #Turn on the LEDs
+def sendHeadlights(event):               #Turn on the LEDs
     if led_status == 0:
         tcpClicSock.send(('lightsON').encode())
     else:
         tcpClicSock.send(('lightsOFF').encode())
 
 
-def call_SR3():                     #Start speech recognition mode
+def sendSR3():                     #Start speech recognition mode
     if speech_status == 0:
         tcpClicSock.send(('voice_3').encode())
     else:
         tcpClicSock.send(('Stop').encode())
 
 
-def call_opencv():                  #Start OpenCV mode
+def sendOpencv():                  #Start OpenCV mode
     if opencv_status == 0:
         tcpClicSock.send(('opencv').encode())
     else:
         tcpClicSock.send(('Stop').encode())
+
+
+def sendAuto(event):            #When this function is called, client commands the car to start auto mode
+    if auto_status == 0:
+        tcpClicSock.send(('auto').encode())
+    else:
+        tcpClicSock.send(('Stop').encode())
+
 
 def voice_input():
     r = sr.Recognizer()
@@ -252,288 +485,30 @@ def voice_input():
     return 'Try again'
 
 
-def voice_command(event):
+def voiceCommand(event):
     v_command=voice_input()
     l_VIN.config(text='%s'%v_command)
     BtnVIN.config(fg=TEXT_COLOR, bg=BUTTON_COLOR)
     if tcpClicSock == None:              # for offline testing
         return
     if  v_command.startswith('forward'):
-        tcpClicSock.send(('forward').encode())
+        sendForward()
     elif v_command.startswith('backward'):
-        tcpClicSock.send(('backward').encode())
+        sendBackward()
     elif v_command.startswith('left'):
-        tcpClicSock.send(('Left').encode())
+        sendLeft()
     elif v_command.startswith('right'):
-        tcpClicSock.send(('Right').encode())
+        sendRight()
     elif v_command.startswith('stop'):
-        tcpClicSock.send(('Stop').encode())
+        sendStop()
     elif v_command.startswith('find'):
-        tcpClicSock.send(('findline').encode())
+        sendFindLine()
     elif v_command.startswith('follow'):
-        tcpClicSock.send(('auto').encode())
+        sendAuto()
     elif v_command.startswith('head'):
-        if led_status == 0:
-            tcpClicSock.send(('lightsON').encode())
-        else:
-            tcpClicSock.send(('lightsOFF').encode())
+        sendHeadlights()
     else:
         pass
-
-
-def spd_set():                 #Call this function for speed adjustment
-    tcpClicSock.send(('spdset:%s'%var_spd.get()).encode())   #Get a speed value from IntVar and send it to the car
-    labelSpeedStatus.config(text='Speed:%s'%var_spd.get())             #Put the speed value on the speed status label
-
-
-def EC1_set(event):            #Call this function for speed adjustment
-    tcpClicSock.send(('EC1set:%s'%E_C1.get()).encode())   #Get a speed value from IntVar and send it to the car
-
-
-def EC2_set(event):            #Call this function for speed adjustment
-    tcpClicSock.send(('EC2set:%s'%E_C2.get()).encode())   #Get a speed value from IntVar and send it to the car
-
-
-def EM1_set(event):            #Call this function for speed adjustment
-    tcpClicSock.send(('EM1set:%s'%E_M1.get()).encode())   #Get a speed value from IntVar and send it to the car
-
-
-def EM2_set(event):            #Call this function for speed adjustment
-    tcpClicSock.send(('EM2set:%s'%E_M2.get()).encode())   #Get a speed value from IntVar and send it to the car
-
-
-def ET1_set(event):            #Call this function for speed adjustment
-    tcpClicSock.send(('LUMset:%s'%E_T1.get()).encode())   #Get a speed value from IntVar and send it to the car
-
-
-def ET2_set(event):            #Call this function for speed adjustment
-    tcpClicSock.send(('LDMset:%s'%E_T2.get()).encode())   #Get a speed value from IntVar and send it to the car
-
-
-def Steering_set(event):            #Call this function for steering adjustment
-    tcpClicSock.send(('STEERINGset:%s'%Steering.get()).encode())   
-
-
-def connect(event=None):       #Call this function to connect with the server
-    sc=thread.Thread(target=socket_connect) #Define a thread for connection
-    sc.setDaemon(True)                      #True means it is a front thread, will close when mainloop() closes
-    sc.start()                              #Thread starts
-
-
-def socket_connect():     #Call this function to connect with the robot server
-    global tcpClicSock, ip_entry
-    
-    buttonConnect.config(state='disabled') #Disable the Connect button while trying to connect
-    ip_adr=ip_entry.get()    #Get the IP address from Entry
-
-    if ip_adr == '':         #If no input IP address in Entry, try to import a default IP
-        ip_adr = config.importConfig('IP')
-        if ip_adr == None:
-            ip_adr = "0.0.0.0"
-        labelConnectionStatus.config(text='Connecting')
-        labelConnectionStatus.config(bg='#FF8F00')
-        labelIpAddress.config(text='Default:%s'%ip_adr)
-    
-    for i in range (1,6): # Retry 5 additional times if connection fails
-        try:
-            print("Connecting to server @ %s:%d..." %(ip_adr, SERVER_PORT))
-            address = (ip_adr, SERVER_PORT)
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #Set connection value for socket
-            s.connect(address)               #Connection with the server
-        
-            print("robot Connected")
-            tcpClicSock = s
-        
-            config.exportConfig('IP', ip_adr)
-            labelIpAddress.config(text='IP:%s'%ip_adr)
-            labelConnectionStatus.config(text='Connected')
-            labelConnectionStatus.config(bg='#558B2F')
-
-            ip_entry.config(state='disabled')      #Disable the Entry
-                    
-            at=thread.Thread(target=code_receive) #Define a thread for data receiving
-            at.setDaemon(True)                    #True means it is a front thread, will close when mainloop() closes
-            at.start()                            #Thread starts
-
-            video_thread=thread.Thread(target=video_show) #Define a thread for data receiving
-            video_thread.setDaemon(True)          #True means it is a front thread, will close when mainloop() closes
-            print('Video Connected')
-            video_thread.start()                          #Thread starts
-            break
-
-        except Exception as e:
-            print(e)
-            print("Failed to connect to server!")
-            print('Tried %d/5 time(s)'%i)
-            labelConnectionStatus.config(text='Tried %d/5 time(s)'%i)
-            labelConnectionStatus.config(bg='#EF6C00')
-            tcpClicSock = None
-            time.sleep(1)
-            continue
-
-    if tcpClicSock == None:
-        labelConnectionStatus.config(text='Disconnected')
-        labelConnectionStatus.config(bg='#F44336')
-        buttonConnect.config(state='normal') #enable the Connect button
-
-
-def code_receive():     #A function for data receiving
-    global led_status, findline_status, auto_status, opencv_status, speech_status
-    
-    while True:
-        try:
-            code_car = tcpClicSock.recv(BUFFER_SIZE) #Listening,and save the data in 'code_car'
-        except Exception:
-            print ("got socket exception in code _receive thread, will terminate thread")
-            exit()
-        labelStatus.config(text=code_car)          #Put the data on the label
-        print("recvd from robot: " + str(code_car))
-        if not code_car:
-            continue
-        elif 'SET' in str(code_car):
-            set_list=code_car.decode()
-            set_list=set_list.split()
-            s1,s2,s3,s4,s5,s6,s7=set_list[1:]
-            E_C1.delete(0, 50)
-            E_C2.delete(0, 50)
-            E_M1.delete(0, 50)
-            E_M2.delete(0, 50)
-            E_T1.delete(0, 50)
-            E_T2.delete(0, 50)
-            Steering.delete(0, 50)
-
-            E_C1.insert ( 0, '%d'%int(s1) ) 
-            E_C2.insert ( 0, '%d'%int(s2) ) 
-            E_M1.insert ( 0, '%d'%int(s3) ) 
-            E_M2.insert ( 0, '%d'%int(s4) )
-            E_T1.insert ( 0, '%d'%int(s5) ) 
-            E_T2.insert ( 0, '%d'%int(s6) )
-            Steering.insert ( 0, '%d'%int(s7) )
-
-        elif 'list' in str(code_car):         #Scan result receiving start
-            dis_list=[]
-            f_list=[]
-            list_str=code_car.decode()
-            
-            while  True:                    #Save scan result in dis_list
-                code_car = tcpClicSock.recv(BUFFER_SIZE)
-                if 'finished' in str(code_car):
-                    break
-                list_str+=code_car.decode()
-                labelStatus.config(text='Scanning')
-            
-            dis_list=list_str.split()       #Save the data as a list
-            labelStatus.config(text='Finished')
-            
-            for i in range (0,len(dis_list)):   #Translate the String-type value in the list to Float-type
-                try:
-                    new_f=float(dis_list[i])
-                    f_list.append(new_f)
-                except:
-                    continue
-            
-            dis_list=f_list
-            #can_scan.delete(line)
-            #can_scan.delete(point_scan)
-            # define a canvas
-            can_scan_1 = tk.Canvas(window, bg=CANVAS_COLOR, height=250, width=320, highlightthickness=0) 
-            can_scan_1.place(x=440,y=330) #Place the canvas
-            line = can_scan_1.create_line(0, 62, 320, 62, fill='darkgray')   #Draw a line on canvas
-            line = can_scan_1.create_line(0, 124, 320, 124, fill='darkgray') #Draw a line on canvas
-            line = can_scan_1.create_line(0, 186, 320, 186, fill='darkgray') #Draw a line on canvas
-            line = can_scan_1.create_line(160, 0, 160, 250, fill='darkgray') #Draw a line on canvas
-            line = can_scan_1.create_line(80, 0, 80, 250, fill='darkgray')   #Draw a line on canvas
-            line = can_scan_1.create_line(240, 0, 240, 250, fill='darkgray') #Draw a line on canvas
-
-            x_range = var_x_scan.get()          #Get the value of scan range from IntVar
-
-            for i in range (0,len(dis_list)):   #Scale the result to the size as canvas
-                try:
-                    len_dis_1 = int((dis_list[i]/x_range)*250)                 #600 is the height of canvas
-                    pos     = int((i/len(dis_list))*320)                       #740 is the width of canvas
-                    pos_ra  = int(((i/len(dis_list))*140)+20)                  #Scale the direction range to (20-160)
-                    len_dis = int(len_dis_1*(math.sin(math.radians(pos_ra))))  #len_dis is the height of the line
-
-                    x0_l, y0_l, x1_l, y1_l = pos, (250-len_dis), pos, (250-len_dis)       #The position of line
-                    x0, y0, x1, y1 = (pos+3), (250-len_dis+3), (pos-3), (250-len_dis-3)   #The position of arc
-
-                    if pos <= 160:                                                      #Scale the whole picture to a shape of sector
-                        pos = 160-abs(int(len_dis_1*(math.cos(math.radians(pos_ra)))))
-                        x1_l= (x1_l-math.cos(math.radians(pos_ra))*130)
-                    else:
-                        pos = abs(int(len_dis_1*(math.cos(math.radians(pos_ra)))))+160
-                        x1_l= x1_l+abs(math.cos(math.radians(pos_ra))*130)
-
-                    y1_l = y1_l-abs(math.sin(math.radians(pos_ra))*130)              #Orientation of line
-
-                    line = can_scan_1.create_line(pos, y0_l, x1_l, y1_l, fill=LINE_COLOR)   #Draw a line on canvas
-                    #Draw a arc on canvas
-                    point_scan = can_scan_1.create_oval((pos+3), y0, (pos-3), y1, fill=OVAL_COLOR, outline=OVAL_COLOR) 
-                except:
-                    pass
-            can_tex_11=can_scan_1.create_text((27,178), text='%sm'%round((x_range/4),2), fill='#aeea00')     #Create a text on canvas
-            can_tex_12=can_scan_1.create_text((27,116), text='%sm'%round((x_range/2),2), fill='#aeea00')     #Create a text on canvas
-            can_tex_13=can_scan_1.create_text((27,54), text='%sm'%round((x_range*0.75),2), fill='#aeea00')   #Create a text on canvas
-
-        elif 'voice_3' in str(code_car):         # put this case before the numbers below because of the 3
-            BtnSR3.config(fg='#0277BD', bg='#BBDEFB')
-            labelStatus.config(text='Sphinx SR')        #Put the text on the label
-            speech_status = 1
-
-        elif '1' in str(code_car):               #Translate the code to text
-            labelStatus.config(text='Moving Forward')   #Put the text on the label
-        elif '2' in str(code_car):               #Translate the code to text
-            labelStatus.config(text='Moving Backward')  #Put the text on the label
-        elif '3' in str(code_car):               #Translate the code to text
-            labelStatus.config(text='Turning Left')     #Put the text on the label
-        elif '4' in str(code_car):               #Translate the code to text
-            labelStatus.config(text='Turning Right')    #Put the text on the label
-        elif '5' in str(code_car):               #Translate the code to text
-            labelStatus.config(text='Look Up')          #Put the text on the label
-        elif '6' in str(code_car):               #Translate the code to text
-            labelStatus.config(text='Look Down')        #Put the text on the label
-        elif '7' in str(code_car):               #Translate the code to text
-            labelStatus.config(text='Look Left')        #Put the text on the label
-        elif '8' in str(code_car):               #Translate the code to text
-            labelStatus.config(text='Look Right')       #Put the text on the label
-        elif '9' in str(code_car):               #Translate the code to text
-            labelStatus.config(text='Stop')             #Put the text on the label
-        
-        elif '0' in str(code_car):               #Translate the code to text
-            labelStatus.config(text='Follow Mode On')     #Put the text on the label
-            buttonFollow.config(text='Following', fg='#0277BD', bg='#BBDEFB')
-            auto_status = 1
-        
-        elif 'findline' in str(code_car):        #Translate the code to text
-            BtnFL.config(text='Finding', fg='#0277BD', bg='#BBDEFB')
-            labelStatus.config(text='Find Line') 
-            findline_status = 1
-        
-        elif 'lightsON' in str(code_car):        #Translate the code to text
-            buttonHeadlights.config(text='Lights ON', fg='#0277BD', bg='#BBDEFB')
-            led_status=1
-            labelStatus.config(text='Lights On')        #Put the text on the label
-        
-        elif 'lightsOFF' in str(code_car):        #Translate the code to text
-            buttonHeadlights.config(text='Lights OFF', fg=TEXT_COLOR, bg=BUTTON_COLOR)
-            led_status=0
-            labelStatus.config(text='Lights OFF')        #Put the text on the label
-
-        elif 'oncvon' in str(code_car):
-            BtnOCV.config(text='OpenCV ON', fg='#0277BD', bg='#BBDEFB')
-            BtnFL.config(text='Find Line', fg=TEXT_COLOR, bg=BUTTON_COLOR)
-            labelStatus.config(text='OpenCV ON')
-            opencv_status = 1
-
-        elif 'auto_status_off' in str(code_car):
-            BtnSR3.config(fg=TEXT_COLOR, bg=BUTTON_COLOR, state='normal')
-            BtnOCV.config(text='OpenCV', fg=TEXT_COLOR, bg=BUTTON_COLOR, state='normal')
-            BtnFL.config(text='Find Line', fg=TEXT_COLOR, bg=BUTTON_COLOR)
-            buttonFollow.config(text='Follow', fg=TEXT_COLOR, bg=BUTTON_COLOR, state='normal')
-            findline_status = 0
-            speech_status   = 0
-            opencv_status   = 0
-            auto_status     = 0
 
 
 def init():
@@ -623,13 +598,13 @@ def init():
     Steering = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
     Steering.place(x=785, y=585)                             #Define a Entry and put it in position
 
-    BtnOCV = tk.Button(window, width=BTN_WIDTH_1, text='OpenCV', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge', command=call_opencv)
+    BtnOCV = tk.Button(window, width=BTN_WIDTH_1, text='OpenCV', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge', command=sendOpencv)
     BtnOCV.place(x=30, y=420)
 
     BtnFL = tk.Button(window, width=BTN_WIDTH_1, text='Find Line', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnFL.place(x=105, y=420)
 
-    BtnSR3 = tk.Button(window, width=BTN_WIDTH_1, text='Sphinx SR', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge', command=call_SR3)
+    BtnSR3 = tk.Button(window, width=BTN_WIDTH_1, text='Sphinx SR', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge', command=sendSR3)
     BtnSR3.place(x=300, y=495)
 
     can_scan = tk.Canvas(window, bg=CANVAS_COLOR, height=250, width=320, highlightthickness=0) #define a canvas
@@ -753,69 +728,69 @@ def init():
 
     # Bind the buttons with the corresponding callback function
     # first bind for button pressing
-    buttonSteerRight.bind('<ButtonPress-1>', call_steer_Right)
-    buttonSteerLeft.bind('<ButtonPress-1>', call_steer_Left)
-    buttonMiddle.bind('<ButtonPress-1>', call_middle)
-    buttonForward.bind('<ButtonPress-1>', call_forward)
-    buttonBackward.bind('<ButtonPress-1>', call_back)
-    buttonMaxLeft.bind('<ButtonPress-1>', click_call_Left)
-    buttonMaxRight.bind('<ButtonPress-1>', click_call_Right)
-    buttonStop.bind('<ButtonPress-1>', call_Stop)
-    buttonFollow.bind('<ButtonPress-1>', call_auto)
-    buttonHeadLeft.bind('<ButtonPress-1>', call_look_left)
-    buttonHeadRight.bind('<ButtonPress-1>', call_look_right)
-    buttonHeadDown.bind('<ButtonPress-1>', call_look_down)
-    buttonHeadUp.bind('<ButtonPress-1>', call_look_up)
-    buttonHeadHome.bind('<ButtonPress-1>', call_ahead)
-    buttonExit.bind('<ButtonPress-1>', call_exit)
-    buttonSet.bind('<ButtonPress-1>', spd_set)
-    buttonScan.bind('<ButtonPress-1>', scan)
-    BtnC1.bind('<ButtonPress-1>', EC1_set)
-    BtnC2.bind('<ButtonPress-1>', EC2_set)
-    BtnM1.bind('<ButtonPress-1>', EM1_set)
-    BtnM2.bind('<ButtonPress-1>', EM2_set)
-    BtnT1.bind('<ButtonPress-1>', ET1_set)
-    BtnT2.bind('<ButtonPress-1>', ET2_set)
-    BtnSteering.bind('<ButtonPress-1>', Steering_set)
-    BtnFL.bind('<ButtonPress-1>', find_line)
-    BtnVIN.bind('<ButtonPress-1>', voice_command)
-    buttonHeadlights.bind('<ButtonPress-1>', Headlights)
+    buttonSteerRight.bind('<ButtonPress-1>', sendSteerRight)
+    buttonSteerLeft.bind('<ButtonPress-1>', sendSteerLeft)
+    buttonMiddle.bind('<ButtonPress-1>', sendMiddle)
+    buttonForward.bind('<ButtonPress-1>', sendForward)
+    buttonBackward.bind('<ButtonPress-1>', sendBackward)
+    buttonMaxLeft.bind('<ButtonPress-1>', sendLeft)
+    buttonMaxRight.bind('<ButtonPress-1>', sendRight)
+    buttonStop.bind('<ButtonPress-1>', sendStop)
+    buttonFollow.bind('<ButtonPress-1>', sendAuto)
+    buttonHeadLeft.bind('<ButtonPress-1>', sendLookLeft)
+    buttonHeadRight.bind('<ButtonPress-1>', sendLookRight)
+    buttonHeadDown.bind('<ButtonPress-1>', sendLookDown)
+    buttonHeadUp.bind('<ButtonPress-1>', sendLookUp)
+    buttonHeadHome.bind('<ButtonPress-1>', sendLookAhead)
+    buttonExit.bind('<ButtonPress-1>', sendExit)
+    buttonSet.bind('<ButtonPress-1>', sendSpeed)
+    buttonScan.bind('<ButtonPress-1>', sendScan)
+    BtnC1.bind('<ButtonPress-1>', sendEC1)
+    BtnC2.bind('<ButtonPress-1>', sendEC2)
+    BtnM1.bind('<ButtonPress-1>', sendEM1)
+    BtnM2.bind('<ButtonPress-1>', sendEM2)
+    BtnT1.bind('<ButtonPress-1>', sendET1)
+    BtnT2.bind('<ButtonPress-1>', sendET2)
+    BtnSteering.bind('<ButtonPress-1>', sendSteering)
+    BtnFL.bind('<ButtonPress-1>', sendFindLine)
+    BtnVIN.bind('<ButtonPress-1>', voiceCommand)
+    buttonHeadlights.bind('<ButtonPress-1>', sendHeadlights)
 
     # bind for button release
-    buttonForward.bind('<ButtonRelease-1>', call_stop)
-    buttonBackward.bind('<ButtonRelease-1>', call_stop)
-    buttonMaxLeft.bind('<ButtonRelease-1>', call_stop)
-    buttonMaxRight.bind('<ButtonRelease-1>', call_stop)
-    buttonStop.bind('<ButtonRelease-1>', call_stop)
+    buttonForward.bind('<ButtonRelease-1>', sendstop)
+    buttonBackward.bind('<ButtonRelease-1>', sendstop)
+    buttonMaxLeft.bind('<ButtonRelease-1>', sendstop)
+    buttonMaxRight.bind('<ButtonRelease-1>', sendstop)
+    buttonStop.bind('<ButtonRelease-1>', sendstop)
 
     # Bind the keys with the corresponding callback function
-    window.bind('<KeyPress-w>', call_forward) 
-    window.bind('<KeyPress-a>', call_Left)
-    window.bind('<KeyPress-d>', call_Right)
-    window.bind('<KeyPress-s>', call_back)
-    window.bind('<KeyPress-q>', call_steer_Left)
-    window.bind('<KeyPress-e>', call_steer_Right)
+    window.bind('<KeyPress-w>', sendForward) 
+    window.bind('<KeyPress-a>', sendLeft)
+    window.bind('<KeyPress-d>', sendRight)
+    window.bind('<KeyPress-s>', sendBackward)
+    window.bind('<KeyPress-q>', sendSteerLeft)
+    window.bind('<KeyPress-e>', sendSteerRight)
 
-    # When these keys is released,call the function call_stop()
-    window.bind('<KeyRelease-w>', call_stop)
-    window.bind('<KeyRelease-a>', call_middle)
-    window.bind('<KeyRelease-d>', call_middle)
-    window.bind('<KeyRelease-s>', call_stop)
-    window.bind('<KeyRelease-h>', Headlights)
-    window.bind('<KeyRelease-f>', find_line)
-    window.bind('<KeyRelease-v>', voice_command)
+    # When these keys is released,call the function sendstop()
+    window.bind('<KeyRelease-w>', sendstop)
+    window.bind('<KeyRelease-a>', sendMiddle)
+    window.bind('<KeyRelease-d>', sendMiddle)
+    window.bind('<KeyRelease-s>', sendstop)
+    window.bind('<KeyRelease-h>', sendHeadlights)
+    window.bind('<KeyRelease-f>', sendFindLine)
+    window.bind('<KeyRelease-v>', voiceCommand)
 
     # Press these keyss to call the corresponding function()
-    window.bind('<KeyPress-c>', call_Stop)
-    window.bind('<KeyPress-z>', call_auto) 
-    window.bind('<KeyPress-j>', call_look_left)
-    window.bind('<KeyPress-l>', call_look_right)
-    window.bind('<KeyPress-k>', call_ahead)
-    window.bind('<KeyPress-m>', call_look_down)
-    window.bind('<KeyPress-i>', call_look_up)
-    window.bind('<KeyPress-x>', scan)
+    window.bind('<KeyPress-c>', sendStop)
+    window.bind('<KeyPress-z>', sendAuto) 
+    window.bind('<KeyPress-j>', sendLookLeft)
+    window.bind('<KeyPress-l>', sendLookRight)
+    window.bind('<KeyPress-k>', sendLookAhead)
+    window.bind('<KeyPress-m>', sendLookDown)
+    window.bind('<KeyPress-i>', sendLookUp)
+    window.bind('<KeyPress-x>', sendScan)
     window.bind('<Return>', connect)
-    window.bind('<Shift_L>', call_stop)
+    window.bind('<Shift-c>', sendstop)
 
 
 # Main program body    
