@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=Client
+Comment=PiCar B Client
+Exec=/home/pi/Adeept_PiCar-B-V1.0/code/Adeept_PiCar-B-master/server/shell/client.sh
+Icon=false
+Terminal=false
+MultipleArgs=false
+Type=Application
+Catagories=Application;Develpment;
+StartupNotify=false
+#X-KeepTerminal=true
+Name[en_US]=Client

@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=ServerOutput
+Comment=PiCar B server loop
+Exec=/home/pi/Adeept_PiCar-B-V1.0/code/Adeept_PiCar-B-master/server/shell/server_output.sh
+Icon=false
+Terminal=true
+MultipleArgs=false
+Type=Application
+Catagories=Application;Develpment;
+StartupNotify=true
+X-KeepTerminal=true
+Name[en_US]=ServerOutput

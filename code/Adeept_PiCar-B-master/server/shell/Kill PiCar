@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Kill PiCar
+Comment=PiCar B
+Exec=/home/pi/Adeept_PiCar-B-V1.0/code/Adeept_PiCar-B-master/server/shell/kill_server_loop.sh
+Icon=false
+Terminal=false
+MultipleArgs=false
+Type=Application
+Catagories=Application;Develpment;
+StartupNotify=false
+Name[en_US]=Kill PiCar
