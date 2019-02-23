@@ -527,8 +527,8 @@ def init():
     if "linux" in sys.platform:
         IP_ENTRY_WIDTH = 14
         BTN_WIDTH_1 = 5
-        BTN_WIDTH_2 = 11
-        INFO_WIDTH = 32
+        BTN_WIDTH_2 = 12
+        INFO_WIDTH = 43
         INFO_X = 247
         IP_WIDTH = 15
         # reducing font size so widgets fit right on Raspbian

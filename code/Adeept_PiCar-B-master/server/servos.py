@@ -33,7 +33,7 @@ HEAD_PITCH_SERVO = 0
 
 def turn_ang(ang):
     global heading
-    print("turn_ang: %s" %ang)
+    #print("turn_ang: %s" %ang)
     if ang < turn_right_max:
         ang = turn_right_max
     elif ang > turn_left_max:
