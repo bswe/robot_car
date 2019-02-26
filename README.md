@@ -4,7 +4,7 @@ robot car SW based on Adeept PiCar-B
 This repository contains the modified code from the Adeept PiCar-B repository.  I intentionally did not fork their repository
 because the code was so poorly written that a major rewrite was needed.  
 
-So far I have removed lots of extraneous code, and repaired lots of erroneous  stuff.  The Adeept SW was clearly written in a 
+So far I have removed lots of redundant or extraneous code, and repaired lots of erroneous  stuff.  The Adeept SW was clearly written in a 
 classical lazy hacking process that left many cut and pasted comment errors (some of which I haven't gotten around to cleaning up)
 and lots of sledge hammer fixes to coding errors that reflect an obviously poor understanding of the imported modules. An example 
 of this is the laughably pointless 'loop' method in the client.py module with the comical sledge hammer conditional at its end 
