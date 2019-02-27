@@ -59,7 +59,15 @@ def motorStop():
     pwm_B.stop()
 
 
-def motorRight(direction, speed):   #Motor 2 positive and negative rotation
+def move(direction, speed):         # motor control for PiCar-B that has just one motor
+    motorA(direction, speed)
+    if direction == FORWARD:
+        motorB(BACKWARD, speed)
+    else:
+        motorB(FORWARD, speed)
+
+
+def motorB(direction, speed):   #Motor B positive and negative rotation
     if direction == FORWARD:
         GPIO.output(MOTOR_B_PIN1, GPIO.HIGH)
         GPIO.output(MOTOR_B_PIN2, GPIO.LOW)
@@ -72,7 +80,7 @@ def motorRight(direction, speed):   #Motor 2 positive and negative rotation
         pwm_B.ChangeDutyCycle(speed)
 
 
-def motorLeft(direction, speed):   #Motor 1 positive and negative rotation
+def motorA(direction, speed):   #Motor A positive and negative rotation
     if direction == FORWARD:
         GPIO.output(MOTOR_A_PIN1, GPIO.HIGH)
         GPIO.output(MOTOR_A_PIN2, GPIO.LOW)

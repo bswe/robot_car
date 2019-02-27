@@ -15,7 +15,6 @@ import servos, time
 import headlights
 import RPi.GPIO as GPIO
 
-left_spd   = config.importConfigInt('E_M1')         #Speed of the car
 right_spd  = config.importConfigInt('E_M2')         #Speed of the car
 left       = config.importConfigInt('E_T1')         #Motor Left
 right      = config.importConfigInt('E_T2')         #Motor Right
@@ -61,28 +60,24 @@ def run():
     #print('pre')
 
     if 'forward' in v_command:
-        motor.motorLeft(motor.FORWARD, left_spd*spd_ad_2)
-        motor.motorRight(motor.BACKWARD, right_spd*spd_ad_2)
+        motor.move(motor.FORWARD, right_spd*spd_ad_2)
         time.sleep(2)
         motor.motorStop()
 
     elif 'backward' in v_command:
-        motor.motorLeft(motor.BACKWARD, left_spd)
-        motor.motorRight(motor.FORWARD, right_spd)
+        motor.move(motor.BACKWARD, right_spd)
         time.sleep(2)
         motor.motorStop()
 
     elif 'left' in v_command:
-        servos.left()
-        motor.motorLeft(motor.FORWARD, left_spd*spd_ad_2)
-        motor.motorRight(motor.BACKWARD, right_spd*spd_ad_2)
+        servos.steeringLeft()
+        motor.move(motor.FORWARD, right_spd*spd_ad_2)
         time.sleep(2)
         motor.motorStop()
 
     elif "right" in v_command:
-        servos.right()
-        motor.motorLeft(motor.FORWARD, left_spd*spd_ad_2)
-        motor.motorRight(motor.BACKWARD, right_spd*spd_ad_2)
+        servos.steeringRight()
+        motor.move(motor.FORWARD, right_spd*spd_ad_2)
         time.sleep(2)
         motor.motorStop()
 

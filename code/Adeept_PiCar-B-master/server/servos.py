@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 # File name   : servos.py
-# Description : By controlling Servo,the camera can move Up and down,left and right and the Ultrasonic wave can move to left and right.
+# Description : By controlling Servos,the camera and Ultrasonic scanner can move Up and down, left and right and
+#             ; the steering can move to left and right.
 # Website     : www.adeept.com
 # E-mail      : support@adeept.com
 # Author      : wcb
@@ -16,12 +17,16 @@ import time
 import Adafruit_PCA9685
 
 #import the settings for servos
-vtr_mid_orig    = config.importConfigInt('E_C1')
-hoz_mid_orig    = config.importConfigInt('E_C2')
+HEAD_PITCH_MIDDLE    = config.importConfigInt('E_C1')
+HEAD_PITCH_UP_MAX = config.importConfigInt('look_up_max')
+HEAD_PITCH_DOWN_MAX  = config.importConfigInt('look_down_max')
+HEAD_YAW_MIDDLE      = config.importConfigInt('E_C2')
+HEAD_YAW_RIGHT_MAX   = config.importConfigInt('look_right_max')
+HEAD_YAW_LEFT_MAX    = config.importConfigInt('look_left_max')
 
-turn_right_max  = config.importConfigInt('turn_right_max')
-turn_left_max   = config.importConfigInt('turn_left_max')
-turn_middle     = config.importConfigInt('turn_middle')
+STEERING_RIGHT_MAX  = config.importConfigInt('turn_right_max')
+STEERING_LEFT_MAX   = config.importConfigInt('turn_left_max')
+STEERING_MIDDLE     = config.importConfigInt('turn_middle')
 heading = None
 
 pwm = Adafruit_PCA9685.PCA9685()
@@ -31,35 +36,35 @@ STEERING_SERVO = 2
 HEAD_YAW_SERVO = 1
 HEAD_PITCH_SERVO = 0
 
-def turn_ang(ang):
+def steer(position):
     global heading
     #print("turn_ang: %s" %ang)
-    if ang < turn_right_max:
-        ang = turn_right_max
-    elif ang > turn_left_max:
-        ang = turn_left_max
+    if position < STEERING_RIGHT_MAX:
+        position = STEERING_RIGHT_MAX
+    elif position > STEERING_LEFT_MAX:
+        position = STEERING_LEFT_MAX
     else:
         pass
-    pwm.set_pwm(STEERING_SERVO, 0, ang)
-    heading = ang
+    pwm.set_pwm(STEERING_SERVO, 0, position)
+    heading = position
 
-def right():
-    turn_ang(turn_right_max)
+def steeringRight():
+    steer(STEERING_RIGHT_MAX)
 
-def left():
-    turn_ang(turn_left_max)
+def steeringLeft():
+    steer(STEERING_LEFT_MAX)
 
-def middle():
-    turn_ang(turn_middle)
+def steeringMiddle():
+    steer(STEERING_MIDDLE)
 
-def ultra_turn(hoz_mid):
-    pwm.set_pwm(HEAD_YAW_SERVO, 0, hoz_mid)
+def headYaw(position):
+    pwm.set_pwm(HEAD_YAW_SERVO, 0, position)
 
-def camera_turn(vtr_mid):
-    pwm.set_pwm(HEAD_PITCH_SERVO, 0, vtr_mid)
+def headPitch(position):
+    pwm.set_pwm(HEAD_PITCH_SERVO, 0, position)
 
-def ahead():
-	pwm.set_pwm(HEAD_YAW_SERVO, 0, hoz_mid_orig)
-	pwm.set_pwm(HEAD_PITCH_SERVO, 0, vtr_mid_orig)
+def lookAhead():
+	pwm.set_pwm(HEAD_YAW_SERVO, 0, HEAD_YAW_MIDDLE)
+	pwm.set_pwm(HEAD_PITCH_SERVO, 0, HEAD_PITCH_MIDDLE)
 
-middle()   # call middle() to center steering and init heading variable
+steeringMiddle()   # call steeringMiddle() to center steering and init heading variable

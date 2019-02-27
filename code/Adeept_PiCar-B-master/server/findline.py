@@ -15,7 +15,6 @@ import motor
 import servos
 import headlights
 
-left_spd   = config.importConfigInt('E_M1')         #Speed of the car
 right_spd  = config.importConfigInt('E_M2')         #Speed of the car
 left       = config.importConfigInt('E_T1')         #Motor Left
 right      = config.importConfigInt('E_T2')         #Motor Right
@@ -40,28 +39,23 @@ def run():
     status_middle = GPIO.input(line_pin_middle)
     status_left = GPIO.input(line_pin_left)
     if status_left == 1:
-        servos.left()
+        servos.steeringLeft()
         headlights.turn(headlights.BOTH, headlights.OFF)
         headlights.turn(headlights.LEFT, headlights.RED)
-        motor.motorLeft(motor.FORWARD, left_spd*spd_ad_2)
-        motor.motorRight(motor.BACKWARD, right_spd*spd_ad_2)
+        motor.move(motor.FORWARD, right_spd*spd_ad_2)
     elif status_middle == 1:
-        servos.middle()
+        servos.steeringMiddle()
         headlights.turn(headlights.BOTH, headlights.YELLOW)
-        motor.motorLeft(motor.FORWARD, left_spd*spd_ad_1)
-        motor.motorRight(motor.BACKWARD, right_spd*spd_ad_1)
+        motor.move(motor.FORWARD, right_spd*spd_ad_1)
     elif status_right == 1:
-        servos.right()
+        servos.steeringRight()
         headlights.turn(headlights.BOTH, headlights.OFF)
         headlights.turn(headlights.RIGHT, headlights.RED)
-        motor.motorLeft(motor.FORWARD, left_spd*spd_ad_2)
-        motor.motorRight(motor.BACKWARD, right_spd*spd_ad_2)
+        motor.move(motor.FORWARDBACKWARD, right_spd*spd_ad_2)
     else:
-        servos.middle()
+        servos.steeringMiddle()
         headlights.turn(headlights.BOTH, headlights.CYAN)
-        motor.motorLeft(motor.BACKWARD, left_spd)
-        motor.motorRight(motor.FORWARD, right_spd)
-    pass
+        motor.move(motor.BACKWARD, right_spd)
 
 try:
     pass

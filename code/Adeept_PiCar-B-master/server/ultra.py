@@ -15,7 +15,6 @@ import motor
 import servos, headlights
 
 #Set for motors
-left_spd   = config.importConfigInt('E_M1')         #Speed of the car
 right_spd  = config.importConfigInt('E_M2')         #Speed of the car
 left       = config.importConfigInt('E_T1')         #Motor Left
 right      = config.importConfigInt('E_T2')         #Motor Right
@@ -50,27 +49,24 @@ def destroy():        #motor stops when this program exit
 def loop(distance_stay, distance_range):   #Tracking with Ultrasonic
     motor.setup()
     headlights.setup()
-    servos.ahead()
-    servos.middle()
+    servos.lookAhead()
+    servos.steeringMiddle()
     dis = checkdist()
     if dis < distance_range:             #Check if the target is in diatance range
         if dis > (distance_stay+0.1) :   #If the target is in distance range and out of distance stay, then move forward to track
-            servos.ahead()
             moving_time = (dis-distance_stay)/0.38
             if moving_time > 1:
                 moving_time = 1
             print('mf')
             headlights.turn(headlights.BOTH, headlights.CYAN)
-            motor.motorLeft(motor.BACKWARD, left_spd*spd_ad_u)
-            motor.motorRight(motor.FORWARD, right_spd*spd_ad_u)
+            motor.move(motor.FORWARD, right_spd*spd_ad_u)
             time.sleep(moving_time)
             motor.motorStop()
         elif dis < (distance_stay-0.1) : #Check if the target is too close, if so, the car move back to keep distance at distance_stay
             moving_time = (distance_stay-dis)/0.38
             print('mb')
             headlights.turn(headlights.BOTH, headlights.PINK)
-            motor.motorLeft(motor.FORWARD, left_spd*spd_ad_u)
-            motor.motorRight(motor.BACKWARD, right_spd*spd_ad_u)
+            motor.move(motor.BACKWARD, right_spd*spd_ad_u)
             time.sleep(moving_time)
             motor.motorStop()
         else:                            #If the target is at distance, then the car stay still
