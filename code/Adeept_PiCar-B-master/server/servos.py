@@ -18,7 +18,7 @@ import Adafruit_PCA9685
 
 #import the settings for servos
 HEAD_PITCH_MIDDLE    = config.importConfigInt('E_C1')
-HEAD_PITCH_UP_MAX = config.importConfigInt('look_up_max')
+HEAD_PITCH_UP_MAX    = config.importConfigInt('look_up_max')
 HEAD_PITCH_DOWN_MAX  = config.importConfigInt('look_down_max')
 HEAD_YAW_MIDDLE      = config.importConfigInt('E_C2')
 HEAD_YAW_RIGHT_MAX   = config.importConfigInt('look_right_max')

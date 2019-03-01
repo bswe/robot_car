@@ -43,20 +43,22 @@ ip_entry = None
 labelSpeedStatus = None
 labelConnectionStatus = None
 labelIpAddress = None
-buttonFollow = None
-buttonConnect = None
+BtnFollow = None
+BtnConnect = None
 BtnFL = None
-buttonHeadlights = None
+BtnHeadlights = None
 BtnOCV = None
 BtnSR3 = None
 labelStatus = None
 BtnIP = None
-E_C1 = None
-E_C2= None
+headPitchHome = None
+headUpMax = None
+headDownMax = None
+headYawHome = None
+headRightMax = None
+headLeftMax = None
 E_M1 = None
 E_M2 = None
-E_T1 = None
-E_T2 = None
 var_x_scan = None
 var_spd = None
 l_VIN = None
@@ -151,24 +153,24 @@ def receiveThread():     # Thread for receiving and processing data from server
         print("recvd from robot: " + str(code_car))
 
         if 'SET' in str(code_car):
-            set_list=code_car.decode()
-            set_list=set_list.split()
-            s1,s2,s3,s4,s5,s6,s7=set_list[1:]
-            E_C1.delete(0, 50)
-            E_C2.delete(0, 50)
+            set_list = code_car.decode()
+            set_list = set_list.split()
+            s1, s2, s3, s4, s5, s6, s7 = set_list[1:]
+            headPitchHome.delete(0, 50)
+            headYawHome.delete(0, 50)
             E_M1.delete(0, 50)
             E_M2.delete(0, 50)
-            E_T1.delete(0, 50)
-            E_T2.delete(0, 50)
-            Steering.delete(0, 50)
+            headUpMax.delete(0, 50)
+            headDownMax.delete(0, 50)
+            SteeringCenter.delete(0, 50)
 
-            E_C1.insert ( 0, '%d'%int(s1) ) 
-            E_C2.insert ( 0, '%d'%int(s2) ) 
-            E_M1.insert ( 0, '%d'%int(s3) ) 
-            E_M2.insert ( 0, '%d'%int(s4) )
-            E_T1.insert ( 0, '%d'%int(s5) ) 
-            E_T2.insert ( 0, '%d'%int(s6) )
-            Steering.insert ( 0, '%d'%int(s7) )
+            headPitchHome.insert (0, '%d'%int(s1) ) 
+            headYawHome.insert (0, '%d'%int(s2) ) 
+            E_M1.insert (0, '%d'%int(s3) ) 
+            E_M2.insert (0, '%d'%int(s4) )
+            headUpMax.insert (0, '%d'%int(s5) ) 
+            headDownMax.insert (0, '%d'%int(s6) )
+            SteeringCenter.insert (0, '%d'%int(s7) )
 
         elif 'list' in str(code_car):         # Scan result receiving start
             processList(code_car)
@@ -184,12 +186,12 @@ def receiveThread():     # Thread for receiving and processing data from server
             findline_status = 1
         
         elif 'lightsON' in str(code_car):        #Translate the code to text
-            buttonHeadlights.config(text='Lights ON', fg='#0277BD', bg='#BBDEFB')
+            BtnHeadlights.config(text='Lights ON', fg='#0277BD', bg='#BBDEFB')
             labelStatus.config(text='Lights On')        #Put the text on the label
             led_status = 1
         
         elif 'lightsOFF' in str(code_car):        #Translate the code to text
-            buttonHeadlights.config(text='Lights OFF', fg=TEXT_COLOR, bg=BUTTON_COLOR)
+            BtnHeadlights.config(text='Lights OFF', fg=TEXT_COLOR, bg=BUTTON_COLOR)
             labelStatus.config(text='Lights OFF')        #Put the text on the label
             led_status = 0
 
@@ -203,7 +205,7 @@ def receiveThread():     # Thread for receiving and processing data from server
             BtnSR3.config(fg=TEXT_COLOR, bg=BUTTON_COLOR, state='normal')
             BtnOCV.config(text='OpenCV', fg=TEXT_COLOR, bg=BUTTON_COLOR, state='normal')
             BtnFL.config(text='Find Line', fg=TEXT_COLOR, bg=BUTTON_COLOR)
-            buttonFollow.config(text='Follow', fg=TEXT_COLOR, bg=BUTTON_COLOR, state='normal')
+            BtnFollow.config(text='Follow', fg=TEXT_COLOR, bg=BUTTON_COLOR, state='normal')
             findline_status = 0
             speech_status   = 0
             opencv_status   = 0
@@ -214,7 +216,7 @@ def receiveThread():     # Thread for receiving and processing data from server
         # TODO; been bitten by this several times, need to change these to something more robust
         elif '0' in str(code_car):               #Translate the code to text
             labelStatus.config(text='Follow Mode On')     #Put the text on the label
-            buttonFollow.config(text='Following', fg='#0277BD', bg='#BBDEFB')
+            BtnFollow.config(text='Following', fg='#0277BD', bg='#BBDEFB')
             auto_status = 1
 
         elif '1' in str(code_car):               #Translate the code to text
@@ -263,7 +265,7 @@ def fpvThread():       # thread that displays incoming fpv video
 def connectThread():           # Thread that tries to connect with the robot car server
     global tcpClicSock, ip_entry
     
-    buttonConnect.config(state='disabled') #Disable the Connect button while trying to connect
+    BtnConnect.config(state='disabled') #Disable the Connect button while trying to connect
     ip_adr=ip_entry.get()    #Get the IP address from Entry
 
     if ip_adr == '':         #If no input IP address in Entry, try to import a default IP
@@ -314,7 +316,7 @@ def connectThread():           # Thread that tries to connect with the robot car
     if tcpClicSock == None:
         labelConnectionStatus.config(text='Disconnected')
         labelConnectionStatus.config(bg='#F44336')
-        buttonConnect.config(state='normal') #enable the Connect button
+        BtnConnect.config(state='normal') #enable the Connect button
 
 
 def connect(event=None):       #Call this function to start thread to connect with the robot car server
@@ -392,32 +394,40 @@ def sendSpeed():                 #Call this function for speed adjustment
     labelSpeedStatus.config(text='Speed:%s'%var_spd.get())             #Put the speed value on the speed status label
 
 
-def sendEC1(event):            #Call this function for speed adjustment
-    tcpClicSock.send(('EC1set:%s'%E_C1.get()).encode())   #Get a speed value from IntVar and send it to the car
+def sendHeadPitchHome(event):            
+    tcpClicSock.send(('EC1set:%s'%headPitchHome.get()).encode())   
 
 
-def sendEC2(event):            #Call this function for speed adjustment
-    tcpClicSock.send(('EC2set:%s'%E_C2.get()).encode())   #Get a speed value from IntVar and send it to the car
+def sendHeadUpMax(event):            
+    tcpClicSock.send(('LUMset:%s'%headUpMax.get()).encode())   
 
 
-def sendEM1(event):            #Call this function for speed adjustment
-    tcpClicSock.send(('EM1set:%s'%E_M1.get()).encode())   #Get a speed value from IntVar and send it to the car
+def sendHeadDownMax(event):            
+    tcpClicSock.send(('LDMset:%s'%headDownMax.get()).encode())   
 
 
-def sendEM2(event):            #Call this function for speed adjustment
-    tcpClicSock.send(('EM2set:%s'%E_M2.get()).encode())   #Get a speed value from IntVar and send it to the car
+def sendHeadYawHome(event):            
+    tcpClicSock.send(('EC2set:%s'%headYawHome.get()).encode())   
 
 
-def sendET1(event):            #Call this function for speed adjustment
-    tcpClicSock.send(('LUMset:%s'%E_T1.get()).encode())   #Get a speed value from IntVar and send it to the car
+def sendHeadLeftMax(event):            
+    tcpClicSock.send(('LUMset:%s'%headLeftMax.get()).encode())   
 
 
-def sendET2(event):            #Call this function for speed adjustment
-    tcpClicSock.send(('LDMset:%s'%E_T2.get()).encode())   #Get a speed value from IntVar and send it to the car
+def sendHeadRightMax(event):            
+    tcpClicSock.send(('LDMset:%s'%headRightMax.get()).encode())   
 
 
-def sendSteering(event):            #Call this function for steering adjustment
-    tcpClicSock.send(('STEERINGset:%s'%Steering.get()).encode())   
+def sendEM1(event):            
+    tcpClicSock.send(('EM1set:%s'%E_M1.get()).encode())   
+
+
+def sendEM2(event):            
+    tcpClicSock.send(('EM2set:%s'%E_M2.get()).encode())   
+
+
+def sendSteeringCenter(event):            #Call this function for steering adjustment
+    tcpClicSock.send(('STEERINGset:%s'%SteeringCenter.get()).encode())   
 
 
 def sendFindLine(event):            #Line follow mode
@@ -515,8 +525,9 @@ def voiceCommand(event):
 
 
 def init():
-    global ip_entry, labelSpeedStatus, labelConnectionStatus, labelIpAddress, buttonConnect, buttonFollow, BtnFL, buttonHeadlights, BtnOCV, \
-           var_x_scan, var_spd, Steering, BtnSR3, labelStatus, BtnIP, E_C1, E_C2, E_M1, E_M2, E_T1, E_T2, l_VIN, BtnVIN
+    global ip_entry, labelSpeedStatus, labelConnectionStatus, labelIpAddress, BtnConnect, BtnFollow, BtnFL, BtnHeadlights, \
+           BtnOCV, var_x_scan, var_spd, SteeringCenter, BtnSR3, labelStatus, BtnIP, headPitchHome, headYawHome, E_M1, E_M2, \
+           headUpMax, headDownMax, headRightMax, headLeftMax, l_VIN, BtnVIN
 
     window.title('Adeept')              #Main window title
     window.geometry('917x630')          #Main window size, middle of the English letter x.
@@ -559,47 +570,83 @@ def init():
     l_logo.photo = logo
     l_logo.place(x=30,y=13)                        #Place the Label in a right position
 
-    BtnC1 = tk.Button(window, width=BTN_WIDTH_2, text='Camera Ver. Home', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    BtnC1.place(x=785,y=10)
-    E_C1 = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
-    E_C1.place(x=785,y=45)                             #Define a Entry and put it in position
+    yPos = 10
+    BtnHeadPitchHome = tk.Button(window, width=BTN_WIDTH_2, text='Head Pitch Home', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnHeadPitchHome.place(x=785,y=yPos)
+    headPitchHome = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
+    headPitchHome.place(x=785,y=yPos+27)                             #Define a Entry and put it in position
 
-    BtnC2 = tk.Button(window, width=BTN_WIDTH_2, text='Camera Hor. Home', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    BtnC2.place(x=785,y=100)
-    E_C2 = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
-    E_C2.place(x=785,y=135)                             #Define a Entry and put it in position
+    yPos += 55
+    BtnHeadUpMax = tk.Button(window, width=BTN_WIDTH_2, text='Head Up Max', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnHeadUpMax.place(x=785, y=yPos)
+    headUpMax  = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
+    headUpMax .place(x=785, y=yPos+27)                             #Define a Entry and put it in position
 
+    yPos += 55
+    BtnHeadDownMax = tk.Button(window, width=BTN_WIDTH_2, text='Head Down Max', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnHeadDownMax.place(x=785, y=yPos)
+    headDownMax = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
+    headDownMax.place(x=785, y=yPos+27)                             #Define a Entry and put it in position
+
+    yPos += 55
+    BtnHeadYawHome = tk.Button(window, width=BTN_WIDTH_2, text='Head Yaw Home', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnHeadYawHome.place(x=785,y=yPos)
+    headYawHome = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
+    headYawHome.place(x=785,y=yPos+27)                             #Define a Entry and put it in position
+
+    yPos += 55
+    BtnHeadLeftMax = tk.Button(window, width=BTN_WIDTH_2, text='Head Left Max', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnHeadLeftMax.place(x=785,y=yPos)
+    headLeftMax = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
+    headLeftMax.place(x=785,y=yPos+27)                             #Define a Entry and put it in position
+
+    yPos += 55
+    BtnHeadRightMax = tk.Button(window, width=BTN_WIDTH_2, text='Head Right Max', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnHeadRightMax.place(x=785,y=yPos)
+    headRightMax = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
+    headRightMax.place(x=785,y=yPos+27)                             #Define a Entry and put it in position
+
+    yPos += 55
+    BtnSteeringCenter = tk.Button(window, width=BTN_WIDTH_2, text='Steering Center', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnSteeringCenter.place(x=785, y=yPos)
+    SteeringCenter = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
+    SteeringCenter.place(x=785, y=yPos+27)                             #Define a Entry and put it in position
+
+    yPos += 55
+    BtnSteeringRightMax = tk.Button(window, width=BTN_WIDTH_2, text='Steering Right Max', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnSteeringRightMax.place(x=785, y=yPos)
+    SteeringRightMax = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
+    SteeringRightMax.place(x=785, y=yPos+27)                             #Define a Entry and put it in position
+
+    yPos += 55
+    BtnSteeringLefttMax = tk.Button(window, width=BTN_WIDTH_2, text='Steering Left Max', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnSteeringLefttMax.place(x=785, y=yPos)
+    SteeringLeftMax = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
+    SteeringLeftMax.place(x=785, y=yPos+27)                             #Define a Entry and put it in position
+
+    yPos += 55
     BtnM1 = tk.Button(window, width=BTN_WIDTH_2, text='Motor A Speed', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    BtnM1.place(x=785,y=190)
+    BtnM1.place(x=785,y=yPos)
     E_M1 = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
-    E_M1.place(x=785, y=225)                             #Define a Entry and put it in position
+    E_M1.place(x=785, y=yPos+27)                             #Define a Entry and put it in position
 
+    yPos += 55
     BtnM2 = tk.Button(window, width=BTN_WIDTH_2, text='Motor B Speed', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    BtnM2.place(x=785 ,y=280)
+    BtnM2.place(x=785 ,y=yPos)
     E_M2 = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F",fg='#eceff1', exportselection=0, justify='center')
-    E_M2.place(x=785, y=315)                             #Define a Entry and put it in position
+    E_M2.place(x=785, y=yPos+27)                             #Define a Entry and put it in position
 
-    BtnT1 = tk.Button(window, width=BTN_WIDTH_2, text='Look Up Max', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    BtnT1.place(x=785, y=370)
-    E_T1 = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
-    E_T1.place(x=785, y=405)                             #Define a Entry and put it in position
-
-    BtnT2 = tk.Button(window, width=BTN_WIDTH_2, text='Look Down Max', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    BtnT2.place(x=785, y=460)
-    E_T2 = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
-    E_T2.place(x=785, y=495)                             #Define a Entry and put it in position
-
-    E_C1.insert ( 0, 'Default:425' ) 
-    E_C2.insert ( 0, 'Default:425' ) 
-    E_M1.insert ( 0, 'Default:100' ) 
-    E_M2.insert ( 0, 'Default:100' )
-    E_T1.insert ( 0, 'Default:662' ) 
-    E_T2.insert ( 0, 'Default:295' )
-
-    BtnSteering = tk.Button(window, width=BTN_WIDTH_2, text='Steering Cen.', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    BtnSteering.place(x=785, y=550)
-    Steering = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
-    Steering.place(x=785, y=585)                             #Define a Entry and put it in position
+    headPitchHome.insert (0, 'Default:425') 
+    headUpMax.insert (0, 'Default:662') 
+    headDownMax.insert (0, 'Default:335')
+    headYawHome.insert (0, 'Default:250') 
+    headLeftMax.insert (0, 'Default:476')
+    headRightMax.insert (0, 'Default:140')
+    SteeringCenter.insert (0, 'Default:400')
+    SteeringRightMax.insert (0, 'Default:280')
+    SteeringLeftMax.insert (0, 'Default:500')
+    E_M1.insert (0, 'Default:100') 
+    E_M2.insert (0, 'Default:100')
 
     BtnOCV = tk.Button(window, width=BTN_WIDTH_1, text='OpenCV', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge', command=sendOpencv)
     BtnOCV.place(x=30, y=420)
@@ -665,8 +712,8 @@ def init():
     ip_entry = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1')
     ip_entry.place(x=170, y=40)                             #Define a Entry and put it in position
 
-    buttonConnect= tk.Button(window, width=8, text='Connect', fg=TEXT_COLOR, bg=BUTTON_COLOR, command=connect, relief='ridge')
-    buttonConnect.place(x=300, y=35)                          #Define a Button and put it in position
+    BtnConnect= tk.Button(window, width=8, text='Connect', fg=TEXT_COLOR, bg=BUTTON_COLOR, command=connect, relief='ridge')
+    BtnConnect.place(x=300, y=35)                          #Define a Button and put it in position
 
     BtnVIN = tk.Button(window, width=BTN_WIDTH_2, text='Voice Input', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnVIN.place(x=30, y=495)
@@ -675,95 +722,97 @@ def init():
     l_VIN.place(x=30, y=465)      
 
     #Define buttons and put these in position
-    buttonSteerRight = tk.Button(window, width=BTN_WIDTH_1, text='Right', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    buttonSteerRight.place(x=170, y=195)
+    BtnSteerRight = tk.Button(window, width=BTN_WIDTH_1, text='Right', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnSteerRight.place(x=170, y=195)
 
-    buttonSteerLeft = tk.Button(window, width=BTN_WIDTH_1, text='Left', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    buttonSteerLeft.place(x=30, y=195)
+    BtnSteerLeft = tk.Button(window, width=BTN_WIDTH_1, text='Left', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnSteerLeft.place(x=30, y=195)
 
-    buttonForward = tk.Button(window, width=BTN_WIDTH_1, text='Forward', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    buttonForward.place(x=100, y=195)
+    BtnForward = tk.Button(window, width=BTN_WIDTH_1, text='Forward', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnForward.place(x=100, y=195)
 
-    buttonMiddle = tk.Button(window, width=BTN_WIDTH_1, text='Middle', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    buttonMiddle.place(x=100, y=230)
+    BtnMiddle = tk.Button(window, width=BTN_WIDTH_1, text='Middle', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnMiddle.place(x=100, y=230)
 
-    buttonBackward = tk.Button(window, width=BTN_WIDTH_1, text='Backward', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    buttonBackward.place(x=100, y=265)
+    BtnBackward = tk.Button(window, width=BTN_WIDTH_1, text='Backward', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnBackward.place(x=100, y=265)
 
-    buttonMaxLeft = tk.Button(window, width=BTN_WIDTH_1, text='Max Left', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    buttonMaxLeft.place(x=30, y=230)
+    BtnMaxLeft = tk.Button(window, width=BTN_WIDTH_1, text='Max Left', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnMaxLeft.place(x=30, y=230)
 
-    buttonMaxRight = tk.Button(window, width=BTN_WIDTH_1, text='Max Right', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    buttonMaxRight.place(x=170, y=230)
+    BtnMaxRight = tk.Button(window, width=BTN_WIDTH_1, text='Max Right', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnMaxRight.place(x=170, y=230)
 
-    buttonHeadlights = tk.Button(window, width=BTN_WIDTH_1, text='Headlights', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    buttonHeadlights.place(x=330, y=420)
+    BtnHeadlights = tk.Button(window, width=BTN_WIDTH_1, text='Headlights', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnHeadlights.place(x=330, y=420)
 
-    buttonOff = tk.Button(window, width=BTN_WIDTH_1, text='Off', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    buttonOff.place(x=255, y=420)
+    BtnOff = tk.Button(window, width=BTN_WIDTH_1, text='Off', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnOff.place(x=255, y=420)
 
-    buttonFollow = tk.Button(window, width=BTN_WIDTH_1, text='Follow', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    buttonFollow.place(x=180, y=420)
+    BtnFollow = tk.Button(window, width=BTN_WIDTH_1, text='Follow', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnFollow.place(x=180, y=420)
     
-    buttonHeadLeft = tk.Button(window, width=BTN_WIDTH_1, text='Left', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    buttonHeadLeft.place(x=565, y=230)
+    BtnHeadLeft = tk.Button(window, width=BTN_WIDTH_1, text='Left', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnHeadLeft.place(x=565, y=230)
 
-    buttonHeadRight = tk.Button(window, width=BTN_WIDTH_1, text='Right', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    buttonHeadRight.place(x=705, y=230)
+    BtnHeadRight = tk.Button(window, width=BTN_WIDTH_1, text='Right', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnHeadRight.place(x=705, y=230)
 
-    buttonHeadDown = tk.Button(window, width=BTN_WIDTH_1, text='Down', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    buttonHeadDown.place(x=635, y=265)
+    BtnHeadDown = tk.Button(window, width=BTN_WIDTH_1, text='Down', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnHeadDown.place(x=635, y=265)
 
-    buttonHeadUp = tk.Button(window, width=BTN_WIDTH_1, text='Up', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    buttonHeadUp.place(x=635, y=195)
+    BtnHeadUp = tk.Button(window, width=BTN_WIDTH_1, text='Up', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnHeadUp.place(x=635, y=195)
 
-    buttonHeadHome = tk.Button(window, width=BTN_WIDTH_1, text='Home', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    buttonHeadHome.place(x=635, y=230)
+    BtnHeadHome = tk.Button(window, width=BTN_WIDTH_1, text='Home', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnHeadHome.place(x=635, y=230)
 
-    buttonExit = tk.Button(window, width=BTN_WIDTH_1, text='Exit', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    buttonExit.place(x=705, y=10)
+    BtnExit = tk.Button(window, width=BTN_WIDTH_1, text='Exit', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnExit.place(x=705, y=10)
 
-    buttonSet = tk.Button(window, width=BTN_WIDTH_1, text='Set', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    buttonSet.place(x=535, y=107)
+    BtnSet = tk.Button(window, width=BTN_WIDTH_1, text='Set', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnSet.place(x=535, y=107)
 
-    buttonScan = tk.Button(window, width=BTN_WIDTH_1, text='Scan', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    buttonScan.place(x=350, y=330)
+    BtnScan = tk.Button(window, width=BTN_WIDTH_1, text='Scan', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnScan.place(x=350, y=330)
 
     # Bind the buttons with the corresponding callback function
     # first bind for button pressing
-    buttonSteerRight.bind('<ButtonPress-1>', sendSteerRight)
-    buttonSteerLeft.bind('<ButtonPress-1>', sendSteerLeft)
-    buttonMiddle.bind('<ButtonPress-1>', sendMiddle)
-    buttonForward.bind('<ButtonPress-1>', sendForward)
-    buttonBackward.bind('<ButtonPress-1>', sendBackward)
-    buttonMaxLeft.bind('<ButtonPress-1>', sendLeft)
-    buttonMaxRight.bind('<ButtonPress-1>', sendRight)
-    buttonOff.bind('<ButtonPress-1>', sendOff)
-    buttonFollow.bind('<ButtonPress-1>', sendAuto)
-    buttonHeadLeft.bind('<ButtonPress-1>', sendLookLeft)
-    buttonHeadRight.bind('<ButtonPress-1>', sendLookRight)
-    buttonHeadDown.bind('<ButtonPress-1>', sendLookDown)
-    buttonHeadUp.bind('<ButtonPress-1>', sendLookUp)
-    buttonHeadHome.bind('<ButtonPress-1>', sendLookAhead)
-    buttonExit.bind('<ButtonPress-1>', sendExit)
-    buttonSet.bind('<ButtonPress-1>', sendSpeed)
-    buttonScan.bind('<ButtonPress-1>', sendScan)
-    BtnC1.bind('<ButtonPress-1>', sendEC1)
-    BtnC2.bind('<ButtonPress-1>', sendEC2)
+    BtnSteerRight.bind('<ButtonPress-1>', sendSteerRight)
+    BtnSteerLeft.bind('<ButtonPress-1>', sendSteerLeft)
+    BtnMiddle.bind('<ButtonPress-1>', sendMiddle)
+    BtnForward.bind('<ButtonPress-1>', sendForward)
+    BtnBackward.bind('<ButtonPress-1>', sendBackward)
+    BtnMaxLeft.bind('<ButtonPress-1>', sendLeft)
+    BtnMaxRight.bind('<ButtonPress-1>', sendRight)
+    BtnOff.bind('<ButtonPress-1>', sendOff)
+    BtnFollow.bind('<ButtonPress-1>', sendAuto)
+    BtnHeadLeft.bind('<ButtonPress-1>', sendLookLeft)
+    BtnHeadRight.bind('<ButtonPress-1>', sendLookRight)
+    BtnHeadDown.bind('<ButtonPress-1>', sendLookDown)
+    BtnHeadUp.bind('<ButtonPress-1>', sendLookUp)
+    BtnHeadHome.bind('<ButtonPress-1>', sendLookAhead)
+    BtnExit.bind('<ButtonPress-1>', sendExit)
+    BtnSet.bind('<ButtonPress-1>', sendSpeed)
+    BtnScan.bind('<ButtonPress-1>', sendScan)
+    BtnHeadPitchHome.bind('<ButtonPress-1>', sendHeadPitchHome)
+    BtnHeadDownMax.bind('<ButtonPress-1>', sendHeadDownMax)
+    BtnHeadUpMax.bind('<ButtonPress-1>', sendHeadUpMax)
+    BtnHeadYawHome.bind('<ButtonPress-1>', sendHeadYawHome)
+    BtnHeadLeftMax.bind('<ButtonPress-1>', sendHeadLeftMax)
+    BtnHeadRightMax.bind('<ButtonPress-1>', sendHeadRightMax)
+    BtnSteeringCenter.bind('<ButtonPress-1>', sendSteeringCenter)
     BtnM1.bind('<ButtonPress-1>', sendEM1)
     BtnM2.bind('<ButtonPress-1>', sendEM2)
-    BtnT1.bind('<ButtonPress-1>', sendET1)
-    BtnT2.bind('<ButtonPress-1>', sendET2)
-    BtnSteering.bind('<ButtonPress-1>', sendSteering)
     BtnFL.bind('<ButtonPress-1>', sendFindLine)
     BtnVIN.bind('<ButtonPress-1>', voiceCommand)
-    buttonHeadlights.bind('<ButtonPress-1>', sendHeadlights)
+    BtnHeadlights.bind('<ButtonPress-1>', sendHeadlights)
 
     # bind for button release
-    buttonForward.bind('<ButtonRelease-1>', sendStop)
-    buttonBackward.bind('<ButtonRelease-1>', sendStop)
-    buttonMaxLeft.bind('<ButtonRelease-1>', sendStop)
-    buttonMaxRight.bind('<ButtonRelease-1>', sendStop)
+    BtnForward.bind('<ButtonRelease-1>', sendStop)
+    BtnBackward.bind('<ButtonRelease-1>', sendStop)
+    BtnMaxLeft.bind('<ButtonRelease-1>', sendStop)
+    BtnMaxRight.bind('<ButtonRelease-1>', sendStop)
 
     # Bind the keys with the corresponding callback function
     window.bind('<KeyPress-w>', sendForward) 

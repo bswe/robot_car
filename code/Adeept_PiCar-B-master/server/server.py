@@ -535,6 +535,16 @@ def mainLoop(socket):
             config.exportConfig('look_down_max', new_ET2)
             servos.headPitch(new_ET2)
 
+        elif 'LLMset' in command:                 # look left max Adjustment
+            newValue = int((str(command))[7:])
+            config.exportConfig('look_left_max', newValue)
+            servos.headYaw(newValue)
+
+        elif 'LRMset' in command:                 # look right max Adjustment
+            newValue = int((str(command))[7:])
+            config.exportConfig('look_right_max', newValue)
+            servos.headYaw(newValue)
+
         elif 'STEERINGset' in command:            #Motor Steering center Adjustment
             new_Steering = int((str(command))[12:])
             config.exportConfig('turn_middle', new_Steering)
