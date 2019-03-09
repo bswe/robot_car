@@ -70,13 +70,13 @@ def run():
         motor.motorStop()
 
     elif 'left' in v_command:
-        servos.steeringLeft()
+        servos.steerLeft()
         motor.move(motor.FORWARD, right_spd*spd_ad_2)
         time.sleep(2)
         motor.motorStop()
 
     elif "right" in v_command:
-        servos.steeringRight()
+        servos.steerRight()
         motor.move(motor.FORWARD, right_spd*spd_ad_2)
         time.sleep(2)
         motor.motorStop()

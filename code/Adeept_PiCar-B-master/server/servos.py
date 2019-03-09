@@ -7,37 +7,51 @@
 # Author      : wcb
 # Date        : 1/24/2019
 
-from __future__ import division
-
 import sys
 sys.path.insert(0, "../common")
 import config
-
-import time
 import Adafruit_PCA9685
+import time
+import ultra
 
-#import the settings for servos
-HEAD_PITCH_MIDDLE    = config.importConfigInt('E_C1')
-HEAD_PITCH_UP_MAX    = config.importConfigInt('look_up_max')
+# import the settings for servos
+# for pitch servo up is larger value
+HEAD_PITCH_MIDDLE    = config.importConfigInt('pitch_middle')
 HEAD_PITCH_DOWN_MAX  = config.importConfigInt('look_down_max')
-HEAD_YAW_MIDDLE      = config.importConfigInt('E_C2')
+HEAD_PITCH_UP_MAX    = config.importConfigInt('look_up_max')
+
+# for yaw servo left is larger value
+HEAD_YAW_MIDDLE      = config.importConfigInt('yaw_middle')
 HEAD_YAW_RIGHT_MAX   = config.importConfigInt('look_right_max')
 HEAD_YAW_LEFT_MAX    = config.importConfigInt('look_left_max')
 
+# for steering servo left is larger value
+STEERING_MIDDLE     = config.importConfigInt('turn_middle')
 STEERING_RIGHT_MAX  = config.importConfigInt('turn_right_max')
 STEERING_LEFT_MAX   = config.importConfigInt('turn_left_max')
-STEERING_MIDDLE     = config.importConfigInt('turn_middle')
-heading = None
 
-pwm = Adafruit_PCA9685.PCA9685()
-pwm.set_pwm_freq(60)
+SERVO_STEP          = config.importConfigInt('servo_step')
+
+LEFT = SERVO_STEP
+RIGHT = -SERVO_STEP
+UP = SERVO_STEP
+DOWN = -SERVO_STEP
 
 STEERING_SERVO = 2
 HEAD_YAW_SERVO = 1
 HEAD_PITCH_SERVO = 0
 
+steeringHeading = None
+pitchPosition = None
+yawPosition = None
+
+
+def turnSteering(Input):
+    steer(steeringHeading + Input)
+
+
 def steer(position):
-    global heading
+    global steeringHeading
     #print("turn_ang: %s" %ang)
     if position < STEERING_RIGHT_MAX:
         position = STEERING_RIGHT_MAX
@@ -46,25 +60,78 @@ def steer(position):
     else:
         pass
     pwm.set_pwm(STEERING_SERVO, 0, position)
-    heading = position
+    steeringHeading = position
 
-def steeringRight():
+
+def steerFullRight():
     steer(STEERING_RIGHT_MAX)
 
-def steeringLeft():
+
+def steerFullLeft():
     steer(STEERING_LEFT_MAX)
 
-def steeringMiddle():
+
+def steerMiddle():
     steer(STEERING_MIDDLE)
 
+
 def headYaw(position):
+    global yawPosition
+    if position < HEAD_YAW_RIGHT_MAX:
+        position = HEAD_YAW_RIGHT_MAX
+    elif position > HEAD_YAW_LEFT_MAX:
+        position = HEAD_YAW_LEFT_MAX
+    else:
+        pass
     pwm.set_pwm(HEAD_YAW_SERVO, 0, position)
+    yawPosition = position
+    return position
+
 
 def headPitch(position):
+    global pitchPosition
+    if position < HEAD_PITCH_DOWN_MAX:
+        position = HEAD_PITCH_DOWN_MAX
+    elif position > HEAD_PITCH_UP_MAX:
+        position = HEAD_PITCH_UP_MAX
+    else:
+        pass
     pwm.set_pwm(HEAD_PITCH_SERVO, 0, position)
+    pitchPosition = position
+    return position
+
+
+def changePitch(Input):
+    headPitch(pitchPosition + Input)
+
+
+def changeYaw(Input):
+    headYaw(yawPosition + Input)
+
 
 def lookAhead():
-	pwm.set_pwm(HEAD_YAW_SERVO, 0, HEAD_YAW_MIDDLE)
-	pwm.set_pwm(HEAD_PITCH_SERVO, 0, HEAD_PITCH_MIDDLE)
+	headPitch(HEAD_PITCH_MIDDLE)
+	headYaw(HEAD_YAW_MIDDLE)
 
-steeringMiddle()   # call steeringMiddle() to center steering and init heading variable
+
+def scan():                  # Ultrasonic Scanning
+    headPitch(HEAD_PITCH_MIDDLE)
+    direction = HEAD_YAW_LEFT_MAX           # Value of left-position
+    headYaw(direction)
+    time.sleep(.75)                         # Wait for the head to be in position
+    dis_dir=['list']         # append this so that the client will know it is a scan list
+    while direction > HEAD_YAW_RIGHT_MAX:   # Scan from left to right
+        new_scan_data = round(ultra.checkDistance(), 2)   # Get a distance of a certern direction
+        dis_dir.append(str(new_scan_data))            # Put distance value into list for future transmission 
+        direction -= 3           # This value determines the speed of scanning,the greater the faster
+        headYaw(direction)
+        time.sleep(.005)                                # let servo complete movement to new position
+    headYaw(HEAD_YAW_MIDDLE)     # Ultrasonic point forward
+    return dis_dir
+
+
+# initialization code
+pwm = Adafruit_PCA9685.PCA9685()
+pwm.set_pwm_freq(60)
+lookAhead()        # call lookAhead() to center head and init position variables
+steerMiddle()      # call steerMiddle() to center steering and init heading variable

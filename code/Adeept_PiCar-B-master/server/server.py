@@ -7,56 +7,62 @@
 # Author      : wcb
 # Date        : 1/24/2019
 
+def timeStamp():
+    global t
+    startTime = t
+    t = time.time()
+    print("elapsed time = %s" %str(t - startTime))
+    
+import time
+t = time.time()
+
 import sys
 sys.path.insert(0, "../common")
+
+timeStamp()
+# import robot specific modules
 import config
-import RPi.GPIO as GPIO
+import servos
 import motor
 import ultra
-import socket
-import time
-import threading
-import Adafruit_PCA9685
-import picamera
-from picamera.array import PiRGBArray
-import servos
 import headlights
 import findline
 import speech
+
+timeStamp()
+# import installed modules
+import socket
+import threading
+import picamera
+from picamera.array import PiRGBArray
 import cv2
 from collections import deque
 import numpy as np
 import argparse
-import imutils
 import rpi_ws281x
-import argparse
 import zmq
 import base64
 import os
 import subprocess
 import atexit
+from pygame import mixer
 
-dis_dir = []
+timeStamp()
 distance_stay  = 0.4
 distance_range = 2
-led_status = 0
 
 spd_adj    = 1          #Speed Adjustment
-pwm0       = 0          #Camera direction 
-pwm1       = 1          #Ultrasonic direction
 
 left_spd   = 100         #Speed of the car
 right_spd  = 100         #Speed of the car
-left       = 100         #Motor Left
-right      = 100         #Motor Right
 
-spd_ad_1 = 1
 spd_ad_2 = 1
 spd_ad_u = 1
 
 #Status of the car
-auto_status   = 0
-ap_status     = 0
+auto_status = 0
+ap_status   = 0
+led_status  = 0
 
 NO_TURN       = 0
 RIGHT_TURN    = 1
@@ -139,22 +145,6 @@ def colorWipe(strip, color):
         time.sleep(0.005)
 
 
-def scan():                  #Ultrasonic Scanning
-    global dis_dir
-    dis_dir = []
-    dis_dir=['list']         #Make a mark so that the client would know it is a list
-    time.sleep(0.5)          #Wait for the Ultrasonic to be in position
-    direction = look_left_max                #Value of left-position
-    GPIO.setwarnings(True)  #Or it may print warnings
-    while direction > look_right_max:         #Scan from left to right
-        servos.headYaw(direction)
-        direction -= 3           #This value determine the speed of scanning,the greater the faster
-        new_scan_data = round(ultra.checkdist(),2)   #Get a distance of a certern direction
-        dis_dir.append(str(new_scan_data))         #Put that distance value into a list,and save it as String-Type for future transmission 
-    servos.headYaw(hoz_mid)   #Ultrasonic point forward
-    return dis_dir
-
-
 def turn_left_led():         #blink the LED on the left
     headlights.blinker(headlights.LEFT, 4)
 
@@ -164,24 +154,24 @@ def turn_right_led():        #blink the LED on the right
 
 
 def opencv_thread():         #OpenCV and FPV video
-    global hoz_mid_orig, vtr_mid_orig
+    hoz_mid_orig = servos.yawPosition
+    vtr_mid_orig = servos.pitchPosition
     font = cv2.FONT_HERSHEY_SIMPLEX
     for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port = True):
         image = frame.array
-        cv2.line(image,(300,240),(340,240),(128,255,128),1)
-        cv2.line(image,(320,220),(320,260),(128,255,128),1)
+        cv2.line(image, (300,240), (340,240), (128,255,128),1)
+        cv2.line(image, (320,220), (320,260), (128,255,128),1)
 
         if opencv_mode == 1:
             hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
             mask = cv2.inRange(hsv, colorLower, colorUpper)
             mask = cv2.erode(mask, None, iterations = 2)
             mask = cv2.dilate(mask, None, iterations = 2)
-            cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
-                cv2.CHAIN_APPROX_SIMPLE)[-2]
+            cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2]
             center = None
             if len(cnts) > 0:
                 headlights.turn(headlights.BOTH, headlights.GREEN)
-                cv2.putText(image,'Target Detected',(40,60), font, 0.5,(255,255,255),1,cv2.LINE_AA)
+                cv2.putText(image, 'Target Detected', (40,60), font, 0.5, (255,255,255), 1, cv2.LINE_AA)
                 c = max(cnts, key = cv2.contourArea)
                 ((x, y), radius) = cv2.minEnclosingCircle(c)
                 M = cv2.moments(c)
@@ -189,76 +179,55 @@ def opencv_thread():         #OpenCV and FPV video
                 X = int(x)
                 Y = int(y)
                 if radius > 10:
-                    cv2.rectangle(image,(int(x-radius),int(y+radius)),(int(x+radius),int(y-radius)),(255,255,255),1)
+                    cv2.rectangle(image, (int(x-radius), int(y+radius)), (int(x+radius), int(y-radius)), (255,255,255), 1)
                     if X < 310:
-                        mu1 = int((320-X)/3)
+                        mu1 = int((320 - X) /3 )
                         hoz_mid_orig += mu1
-                        if hoz_mid_orig < look_left_max:
-                            pass
-                        else:
-                            hoz_mid_orig = look_left_max
-                        servos.headYaw(hoz_mid_orig)
+                        hoz_mid_orig = servos.headYaw(hoz_mid_orig)
                         #print('x=%d'%X)
                     elif X > 330:
-                        mu1 = int((X-330)/3)
+                        mu1 = int((X - 330) / 3)
                         hoz_mid_orig -= mu1
-                        if hoz_mid_orig > look_right_max:
-                            pass
-                        else:
-                            hoz_mid_orig = look_right_max
-                        servos.headYaw(hoz_mid_orig)
+                        hoz_mid_orig = servos.headYaw(hoz_mid_orig)
                         #print('x=%d'%X)
                     else:
-                        servos.steeringMiddle()
+                        servos.steerMiddle()
 
-                    mu_t = 390-(hoz_mid-hoz_mid_orig)
-                    v_mu_t = 390+(hoz_mid+hoz_mid_orig)
+                    mu_t = 390 - (servos.STEERING_MIDDLE - hoz_mid_orig)
                     servos.steer(mu_t)
 
                     dis = dis_data
-                    if dis < (distance_stay-0.1) :
+                    if dis < (distance_stay - 0.1) :
                         headlights.turn(headlights.BOTH, headlights.RED)
-                        servos.steer(mu_t)
                         motor.move(motor.BACKWARD, right_spd*spd_ad_u)
-                        cv2.putText(image,'Too Close',(40,80), font, 0.5,(128,128,255),1,cv2.LINE_AA)
-                    elif dis > (distance_stay+0.1):
+                        cv2.putText(image, 'Too Close', (40,80), font, 0.5, (128,128,255), 1, cv2.LINE_AA)
+                    elif dis > (distance_stay + 0.1):
                         motor.move(motor.FORWARD, right_spd*spd_ad_2)
-                        cv2.putText(image,'OpenCV Tracking',(40,80), font, 0.5,(128,255,128),1,cv2.LINE_AA)
+                        cv2.putText(image, 'OpenCV Tracking', (40,80), font, 0.5, (128,255,128), 1, cv2.LINE_AA)
                     else:
                         motor.motorStop()
                         headlights.turn(headlights.BOTH, headlights.BLUE)
-                        cv2.putText(image,'In Position',(40,80), font, 0.5,(255,128,128),1,cv2.LINE_AA)
+                        cv2.putText(image, 'In Position', (40,80), font, 0.5, (255,128,128), 1, cv2.LINE_AA)
 
                     if dis < 8:
-                        cv2.putText(image,'%s m'%str(round(dis,2)),(40,40), font, 0.5,(255,255,255),1,cv2.LINE_AA)
+                        cv2.putText(image, '%s m'%str(round(dis,2)), (40,40), font, 0.5, (255,255,255), 1, cv2.LINE_AA)
 
                     if Y < 230:
-                        mu2 = int((240-Y)/5)
+                        mu2 = int((240 - Y) / 5)
                         vtr_mid_orig += mu2
-                        if vtr_mid_orig < look_up_max:
-                            pass
-                        else:
-                            vtr_mid_orig = look_up_max
-                        servos.headPitch(vtr_mid_orig)
+                        vtr_mid_orig = servos.headPitch(vtr_mid_orig)
                     elif Y > 250:
-                        mu2 = int((Y-240)/5)
-                        vtr_mid_orig -= mu2
-                        if vtr_mid_orig > look_down_max:
-                            pass
-                        else:
-                            vtr_mid_orig = look_down_max
-                        servos.headPitch(vtr_mid_orig)
+                        mu2 = int((Y - 240) / 5)
+                        svtr_mid_orig = servos.headPitch(vtr_mid_orig)
                     
-                    if X>280:
-                        if X<350:
-                            #print('looked')
-                            cv2.line(image,(300,240),(340,240),(64,64,255),1)
-                            cv2.line(image,(320,220),(320,260),(64,64,255),1)
-                            cv2.rectangle(image,(int(x-radius),int(y+radius)),
-                                (int(x+radius),int(y-radius)),(64,64,255),1)
+                    if X > 280:
+                        if X < 350:
+                            cv2.line(image, (300,240), (340,240), (64,64,255), 1)
+                            cv2.line(image, (320,220), (320,260), (64,64,255), 1)
+                            cv2.rectangle(image, (int(x-radius), int(y+radius)), (int(x+radius), int(y-radius)), (64, 64, 255), 1)
             else:
                 headlights.turn(headlights.BOTH, headlights.YELLOW)
-                cv2.putText(image,'Target Detecting',(40,60), font, 0.5,(255,255,255),1,cv2.LINE_AA)
+                cv2.putText(image, 'Target Detecting', (40,60), font, 0.5, (255,255,255), 1, cv2.LINE_AA)
                 led_y = 1
                 motor.motorStop()
 
@@ -270,7 +239,7 @@ def opencv_thread():         #OpenCV and FPV video
         else:
             dis = dis_data
             if dis < 8:
-                cv2.putText(image,'%s m'%str(round(dis,2)),(40,40), font, 0.5,(255,255,255),1,cv2.LINE_AA)
+                cv2.putText(image, '%s m'%str(round(dis,2)), (40,40), font, 0.5, (255,255,255), 1, cv2.LINE_AA)
 
         encoded, buffer = cv2.imencode('.jpg', image)
         jpg_as_text = base64.b64encode(buffer)
@@ -330,7 +299,7 @@ def speech_thread():         #Speech recognition mode
 def auto_thread():           #Ultrasonic tracking mode
     while 1:
         while auto_mode:
-            ultra.loop(distance_stay,distance_range)
+            ultra.loop(distance_stay, distance_range)
         time.sleep(0.2)
 
 
@@ -338,7 +307,7 @@ def dis_scan_thread():       #Get Ultrasonic scan distance
     global dis_data
     while 1:
         while  dis_scan:
-            dis_data = ultra.checkdist()
+            dis_data = ultra.checkDistance()
             time.sleep(0.2)
         time.sleep(0.2)
 
@@ -458,12 +427,14 @@ def startThreads():
 def setup(clientSocket, clientIpAddress):                 #initialization
     global footage_socket
     
-    clientSocket.send(('SET %s' %vtr_mid + ' %s' %hoz_mid + ' %s' %left_spd + ' %s' %right_spd + ' %s' %look_up_max + \
-                       ' %s' %look_down_max + ' %s' %servos.STEERING_MIDDLE).encode())
-    print('setup: sending SET %s' %vtr_mid + ' %s' %hoz_mid + ' %s' %left_spd + ' %s' %right_spd + ' %s' %look_up_max + \
-          ' %s' %look_down_max + ' %s' %servos.STEERING_MIDDLE)
-    motor.setup()            
-    findline.setup()
+    clientSocket.send(('SET %s' %servos.HEAD_PITCH_MIDDLE + ' %s' %servos.HEAD_PITCH_UP_MAX + ' %s' %servos.HEAD_PITCH_DOWN_MAX + \
+                       ' %s' %servos.HEAD_YAW_MIDDLE + ' %s' %servos.HEAD_YAW_LEFT_MAX + ' %s' %servos.HEAD_YAW_RIGHT_MAX + \
+                       ' %s' %servos.STEERING_MIDDLE + ' %s' %servos.STEERING_LEFT_MAX + ' %s' %servos.STEERING_RIGHT_MAX + \
+                       ' %s' %left_spd + ' %s' %right_spd).encode())
+    print('setup: sending SET %s' %servos.HEAD_PITCH_MIDDLE + ' %s' %servos.HEAD_PITCH_UP_MAX + ' %s' %servos.HEAD_PITCH_DOWN_MAX + \
+                       ' %s' %servos.HEAD_YAW_MIDDLE + ' %s' %servos.HEAD_YAW_LEFT_MAX + ' %s' %servos.HEAD_YAW_RIGHT_MAX + \
+                       ' %s' %servos.STEERING_MIDDLE + ' %s' %servos.STEERING_LEFT_MAX + ' %s' %servos.STEERING_RIGHT_MAX + \
+                       ' %s' %left_spd + ' %s' %right_spd)
 
     #FPV initialization
     context = zmq.Context()
@@ -474,7 +445,7 @@ def setup(clientSocket, clientIpAddress):                 #initialization
     
 
 def mainLoop(socket):                   
-    global hoz_mid, vtr_mid, led_status, auto_status, opencv_mode, findline_mode, speech_mode, \
+    global led_status, auto_status, opencv_mode, findline_mode, speech_mode, \
            auto_mode, command, ap_status, turn_status, blinkThreadStatus
     
     BUFSIZ = 1024                             #Define buffer size
@@ -491,7 +462,8 @@ def mainLoop(socket):
 
         elif 'quit' in command:
             print('shutting down')
-            cleanup()
+            colorWipe(ledStrip, rpi_ws281x.Color(0,0,0))
+            headlights.turn(headlights.BOTH, headlights.OFF)
             return
 
         elif 'spdset' in command:
@@ -500,56 +472,74 @@ def mainLoop(socket):
             print("speed adjustment set to %s" %str(spd_adj))
 
         elif 'scan' in command:
-            dis_can = scan()                     #Start Scanning
-            str_list_1 = dis_can                 #Divide the list to make it samller to send 
-            str_index = ' '                      #Separate the values by space
+            dis_can = servos.scan()              # Start Scanning
+            str_list_1 = dis_can                 # Divide the list to make it samller to send 
+            str_index = ' '                      # Separate the values by space
             str_send_1 = str_index.join(str_list_1)+' '
-            socket.sendall((str(str_send_1)).encode())   #Send Data
-            socket.send('finished'.encode())        #Sending 'finished' tell the client to stop receiving the list of dis_can
+            socket.sendall((str(str_send_1)).encode())   # Send Data
+            socket.send('finished'.encode())        # Sending 'finished' tell the client to stop receiving the list of dis_can
 
         elif 'EC1set' in command:                 # pitch Adjustment
-            new_EC1 = int((str(command))[7:])
-            config.exportConfig('E_C1', new_EC1)
-            servos.headPitch(new_EC1)
-
-        elif 'EC2set' in command:                 # yaw Adjustment
-            new_EC2 = int((str(command))[7:])
-            config.exportConfig('E_C2', new_EC2)
-            servos.headYaw(new_EC2)
-
-        elif 'EM1set' in command:                 #Motor A Speed Adjustment
-            new_EM1 = int((str(command))[7:])
-            config.exportConfig('E_M1', new_EM1)
-
-        elif 'EM2set' in command:                 #Motor B Speed Adjustment
-            new_EM2 = int((str(command))[7:])
-            config.exportConfig('E_M2', new_EM2)
-
-        elif 'LUMset' in command:                 # look up max Adjustment
-            new_ET1 = int((str(command))[7:])
-            config.exportConfig('look_up_max', new_ET1)
-            servos.headPitch(new_ET1)
+            newValue = int((str(command))[7:])
+            config.exportConfig('pitch_middle', newValue)
+            servos.HEAD_PITCH_MIDDLE = newValue
+            servos.headPitch(newValue)
 
         elif 'LDMset' in command:                 # look down max Adjustment
-            new_ET2 = int((str(command))[7:])
-            config.exportConfig('look_down_max', new_ET2)
-            servos.headPitch(new_ET2)
+            newValue = int((str(command))[7:])
+            config.exportConfig('look_down_max', newValue)
+            servos.HEAD_PITCH_DOWN_MAX = newValue
+            servos.headPitch(newValue)
+
+        elif 'LUMset' in command:                 # look up max Adjustment
+            newValue = int((str(command))[7:])
+            config.exportConfig('look_up_max', newValue)
+            servos.HEAD_PITCH_UP_MAX = newValue
+            servos.headPitch(newValue)
+
+        elif 'EC2set' in command:                 # yaw Adjustment
+            newValue = int((str(command))[7:])
+            config.exportConfig('yaw_middle', newValue)
+            servos.HEAD_YAW_MIDDLE = newValue
+            servos.headYaw(newValue)
 
         elif 'LLMset' in command:                 # look left max Adjustment
             newValue = int((str(command))[7:])
             config.exportConfig('look_left_max', newValue)
+            servos.HEAD_YAW_LEFT_MAX = newValue
             servos.headYaw(newValue)
 
         elif 'LRMset' in command:                 # look right max Adjustment
             newValue = int((str(command))[7:])
             config.exportConfig('look_right_max', newValue)
+            servos.HEAD_YAW_RIGHT_MAX = newValue
             servos.headYaw(newValue)
 
         elif 'STEERINGset' in command:            #Motor Steering center Adjustment
-            new_Steering = int((str(command))[12:])
-            config.exportConfig('turn_middle', new_Steering)
-            servos.STEERING_MIDDLE = new_Steering
-            servos.steeringMiddle()
+            newValue = int((str(command))[12:])
+            config.exportConfig('turn_middle', newValue)
+            servos.STEERING_MIDDLE = newValue
+            servos.steerMiddle()
+
+        elif 'SLMset' in command:                 # Steering left max Adjustment
+            newValue = int((str(command))[7:])
+            config.exportConfig('turn_left_max', newValue)
+            servos.STEERING_LEFT_MAX = newValue
+            servos.steerFullLeft()
+
+        elif 'SRMset' in command:                 # Steering right max Adjustment
+            newValue = int((str(command))[7:])
+            config.exportConfig('turn_right_max', newValue)
+            servos.STEERING_RIGHT_MAX = newValue
+            servos.steerFullRight()
+
+        elif 'EM1set' in command:                 #Motor A Speed Adjustment
+            newValue = int((str(command))[7:])
+            config.exportConfig('E_M1', newValue)
+
+        elif 'EM2set' in command:                 #Motor B Speed Adjustment
+            newValue = int((str(command))[7:])
+            config.exportConfig('E_M2', newValue)
 
         elif 'stop' in command:                   #When server receive "stop" from client,car stops moving
             socket.send('9'.encode())
@@ -569,34 +559,34 @@ def mainLoop(socket):
             led_status = 0
             socket.send('lightsOFF'.encode())
 
-        elif 'middle' in command:                 #Go straight
-            headlights.turn(headlights.BOTH, headlights.BLUE)
-            turn_status = NO_TURN
-            servos.steeringMiddle()
-        
         elif 'SteerLeft' in command:              #Turn more to the left
             headlights.turn(headlights.RIGHT, headlights.OFF)
             headlights.turn(headlights.LEFT, headlights.YELLOW)
-            servos.steer(servos.heading+turn_speed)
+            servos.turnSteering(servos.LEFT)
             turn_status = LEFT_TURN
 
         elif 'SteerRight' in command:              #Turn more to the Right
             headlights.turn(headlights.LEFT, headlights.OFF)
             headlights.turn(headlights.RIGHT, headlights.YELLOW)
-            servos.steer(servos.heading-turn_speed)
+            servos.turnSteering(servos.RIGHT)
             turn_status = RIGHT_TURN
 
+        elif 'middle' in command:                 #Go straight
+            headlights.turn(headlights.BOTH, headlights.BLUE)
+            turn_status = NO_TURN
+            servos.steerMiddle()
+        
         elif 'Left' in command:                   #Turn hard left
             headlights.turn(headlights.RIGHT, headlights.OFF)
             headlights.turn(headlights.LEFT, headlights.YELLOW)
-            servos.steeringLeft()
+            servos.steerFullLeft()
             turn_status = LEFT_TURN
             socket.send('3'.encode())
         
         elif 'Right' in command:                  #Turn hard right
             headlights.turn(headlights.LEFT, headlights.OFF)
             headlights.turn(headlights.RIGHT, headlights.YELLOW)
-            servos.steeringRight()
+            servos.steerFullRight()
             turn_status = RIGHT_TURN
             socket.send('4'.encode())
         
@@ -609,34 +599,23 @@ def mainLoop(socket):
             motor.move(motor.FORWARD, right_spd*spd_adj)
 
         elif 'l_up' in command:                   #Camera look up
-            if vtr_mid < look_up_max:
-                vtr_mid += turn_speed
-            servos.headPitch(vtr_mid)
+            servos.changePitch(servos.UP)
             socket.send('5'.encode())
 
         elif 'l_do' in command:                   #Camera look down
-            if vtr_mid > look_down_max:
-                vtr_mid -= turn_speed
-            servos.headPitch(vtr_mid)
-            print(vtr_mid)
+            servos.changePitch(servos.DOWN)
             socket.send('6'.encode())
 
         elif 'l_le' in command:                   #Camera look left
-            if hoz_mid< look_left_max:
-                hoz_mid+=turn_speed
-            servos.headYaw(hoz_mid)
+            servos.changeYaw(servos.LEFT)
             socket.send('7'.encode())
 
         elif 'l_ri' in command:                   #Camera look right
-            if hoz_mid > look_right_max:
-                hoz_mid -= turn_speed
-            servos.headYaw(hoz_mid)
+            servos.changeYaw(servos.RIGHT)
             socket.send('8'.encode())
 
         elif 'ahead' in command:                  #Camera look ahead
             servos.lookAhead()
-            vtr_mid = vtr_mid_orig
-            hoz_mid = hoz_mid_orig
 
         elif 'Off' in command:                   #When server receive "Off" from client, Auto Mode switches off
             opencv_mode   = 0
@@ -644,11 +623,12 @@ def mainLoop(socket):
             speech_mode   = 0
             auto_mode     = 0
             auto_status   = 0
+            time.sleep(.3)       # wait for threads to detect the off state
             dis_scan = 1
             socket.send('auto_status_off'.encode())
             motor.motorStop()
             headlights.turn(headlights.BOTH, headlights.OFF)
-            servos.steeringMiddle()
+            servos.steerMiddle()
             turn_status = NO_TURN
         
         elif 'auto' in command:                   #When server receive "auto" from client,start Auto Mode
@@ -678,31 +658,30 @@ def mainLoop(socket):
 
 
 def cleanup():
-    colorWipe(ledStrip, rpi_ws281x.Color(0,0,0))
-    headlights.turn(headlights.BOTH, headlights.OFF)
+    print("server module: executing cleanup()")
     try:
         camera.close()
     except:
-        print("cleanup: caught exception")
+        print("cleanup: caught known false picamera exception that it is ignoring")
         pass      # ignore known random exception in picamera library
-    GPIO.cleanup()
     print("cleanup: completed")
 
 
 if __name__ == '__main__':
+    timeStamp()
     print("robot server starting...")
 
-    #atexit.register(cleanup)
-    vtr_mid = config.importConfigInt('E_C1')
-    hoz_mid = config.importConfigInt('E_C2')
-    look_up_max = config.importConfigInt('look_up_max')
-    look_down_max = config.importConfigInt('look_down_max')
-    look_right_max = config.importConfigInt('look_right_max')
-    look_left_max = config.importConfigInt('look_left_max')
-    turn_speed = config.importConfigInt('look_turn_speed')
-    vtr_mid_orig = vtr_mid
-    hoz_mid_orig = hoz_mid
-
+    print("initializing mixer")
+    mixer.init()
+    print("loading sound file")
+    i_am_a_robot = mixer.Sound('sounds/i-am-a-robot.wav')
+    print("playing sound file")
+    i_am_a_robot.set_volume(.40)
+    i_am_a_robot.play()
+    timeStamp()
+    
+    atexit.register(cleanup)
+    
     # LED strip configuration:
     LED_COUNT      = 12      # Number of LED pixels.
     LED_PIN        = 12      # GPIO pin connected to the pixels (18 uses PWM!).
@@ -734,10 +713,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--clear', action='store_true', help='clear the display on exit')
     args = parser.parse_args()
-   
-    servos.lookAhead()
-    headlights.setup()
-    
+       
     try:
        clientSocket, clientIpAddress = connect()
     except KeyboardInterrupt:
@@ -755,3 +731,4 @@ if __name__ == '__main__':
             os.system("sudo shutdown -h now\n")
             time.sleep(5)
         cleanup()
+    print("robot server stopping...")

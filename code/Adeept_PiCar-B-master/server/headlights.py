@@ -8,6 +8,7 @@
 
 import RPi.GPIO as GPIO
 import time
+import atexit
 
 # light state constants
 OFF    = 0
@@ -25,31 +26,9 @@ RIGHT = 9
 BOTH  = 10
 
 
-def setup():#initialization
-    # encapsulate these so module details are safe and not accessable
-    # GPIO pins connected to the headlight LEDs
-    LEFT_R = 15
-    LEFT_G = 16
-    LEFT_B = 18
-
-    RIGHT_R = 19
-    RIGHT_G = 21
-    RIGHT_B = 22
-    
-    GPIO.setwarnings (True)
-    GPIO.setmode (GPIO.BOARD)
-    GPIO.setup (LEFT_R, GPIO.OUT)
-    GPIO.setup (LEFT_G, GPIO.OUT)
-    GPIO.setup (LEFT_B, GPIO.OUT)
-    GPIO.setup (RIGHT_R, GPIO.OUT)
-    GPIO.setup (RIGHT_G, GPIO.OUT)
-    GPIO.setup (RIGHT_B, GPIO.OUT)
-    turn (BOTH, OFF)
-
-
 def turn (target, state):
     # encapsulate these so module details are safe and not accessable
-    # GPIO pins connected to the headlight LEDs
+    # constants for the GPIO pins connected to the headlight LEDs
     LEFT_R = 15
     LEFT_G = 16
     LEFT_B = 18
@@ -229,11 +208,27 @@ def police (police_time):
     turn (BOTH, OFF)
 
 
-def cleanUp():
+def cleanup():
+    print("headlights module: executing cleanup()")
+    GPIO.setwarnings (False)
     GPIO.cleanup()             # Release resource
 
 
+# initialization code, intentionally not in a method to encapsulate it within the module and to ensure its execution 
+GPIO.setwarnings (True)
+GPIO.setmode (GPIO.BOARD)
+GPIO.setup (15, GPIO.OUT)   # LEFT_R
+GPIO.setup (16, GPIO.OUT)   # LEFT_G
+GPIO.setup (18, GPIO.OUT)   # LEFT_B
+GPIO.setup (19, GPIO.OUT)   # RIGHT_R
+GPIO.setup (21, GPIO.OUT)   # RIGHT_G
+GPIO.setup (22, GPIO.OUT)   # RIGHT_B
+turn (BOTH, OFF)
+atexit.register(cleanup)
+
+
 if __name__ == '__main__':
+    # for stand alone module testing
     setup()
     turn (BOTH, WHITE)
     time.sleep(2)

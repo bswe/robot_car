@@ -8,6 +8,7 @@
 
 import RPi.GPIO as GPIO
 import time
+import atexit
 
 # MOTOR_EN_A: Pin7  |  MOTOR_EN_B: Pin11
 # MOTOR_A:  Pin8,Pin10    |  MOTOR_B: Pin13,Pin12
@@ -22,36 +23,8 @@ MOTOR_B_PIN2 = 12
 FORWARD  = 0
 BACKWARD = 1
 
-pwm_A = 0
-pwm_B = 0
-
-setupCalled = False
-
-
-def setup():     #Motor initialization
-    global pwm_A, pwm_B, setupCalled
-    if setupCalled:
-        # should only have to do this once
-        return
-    GPIO.setwarnings(True)
-    GPIO.setmode(GPIO.BOARD)
-    GPIO.setup(MOTOR_A_EN, GPIO.OUT)
-    GPIO.setup(MOTOR_B_EN, GPIO.OUT)
-    GPIO.setup(MOTOR_A_PIN1, GPIO.OUT)
-    GPIO.setup(MOTOR_A_PIN2, GPIO.OUT)
-    GPIO.setup(MOTOR_B_PIN1, GPIO.OUT)
-    GPIO.setup(MOTOR_B_PIN2, GPIO.OUT)
-    try:
-        print("creating motor A PWM, pwm_A=%s" %str(pwm_A))
-        pwm_A = GPIO.PWM(MOTOR_A_EN, 100)
-        print("creating motor B PWM, pwm_B=%s" %str(pwm_B))
-        pwm_B = GPIO.PWM(MOTOR_B_EN, 100)
-    except Exception as e:
-        print(e)
-        #pass
-    print("pwm_A=%s" %str(pwm_A))
-    print("pwm_B=%s" %str(pwm_B))
-    setupCalled = True
+pwm_A = None
+pwm_B = None
 
 
 def motorStop():      
@@ -93,14 +66,28 @@ def motorA(direction, speed):   #Motor A positive and negative rotation
         pwm_A.ChangeDutyCycle(speed)
 
 
-def destroy():
-    motorStop()
+def cleanup():
+    print("motor module: executing cleanup()")
+    GPIO.setwarnings (False)
     GPIO.cleanup()             # Release resource
 
-# not sure what this was for, so I commented it out
-#try:
-#    pass
-#except KeyboardInterrupt:
-#    destroy()
 
-
+# initialization code, intentionally not in a method to encapsulate it within the module and to ensure its execution 
+GPIO.setwarnings(True)
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(MOTOR_A_EN, GPIO.OUT)
+GPIO.setup(MOTOR_B_EN, GPIO.OUT)
+GPIO.setup(MOTOR_A_PIN1, GPIO.OUT)
+GPIO.setup(MOTOR_A_PIN2, GPIO.OUT)
+GPIO.setup(MOTOR_B_PIN1, GPIO.OUT)
+GPIO.setup(MOTOR_B_PIN2, GPIO.OUT)
+try:
+    print("creating motor A PWM, pwm_A=%s" %str(pwm_A))
+    pwm_A = GPIO.PWM(MOTOR_A_EN, 100)
+    print("creating motor B PWM, pwm_B=%s" %str(pwm_B))
+    pwm_B = GPIO.PWM(MOTOR_B_EN, 100)
+except Exception as e:
+    print(e)
+print("pwm_A=%s" %str(pwm_A))
+print("pwm_B=%s" %str(pwm_B))
+atexit.register(cleanup)
