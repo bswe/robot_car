@@ -484,6 +484,7 @@ def sendAuto(event):            #When this function is called, client commands t
 
 def playSound(*args):
     print(soundList.get() )
+    tcpClicSock.send((PLAY_SOUND + soundList.get() + END_OF_CMD).encode)   
  
 
 def voice_input():
@@ -881,11 +882,6 @@ def init():
 
 # Main program body    
 if __name__ == '__main__':
-    # the following code doesn't seem to be needed so I commented it out for now
-    #opencv_socket = socket()
-    #opencv_socket.bind(('0.0.0.0', 8080))
-    #opencv_socket.listen(0)
-
     context = zmq.Context()
     footage_socket = context.socket(zmq.SUB)
     footage_socket.bind('tcp://*:5555')

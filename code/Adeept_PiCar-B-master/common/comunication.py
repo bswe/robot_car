@@ -38,3 +38,6 @@ soundKeys = {BYE_BYE,
              PEW_PEW,
              R2D2}
 
+# strings used to specify commands
+END_OF_CMD   = ";"
+PLAY_SOUND   = "PS:"

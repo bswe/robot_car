@@ -22,12 +22,14 @@ sys.path.insert(0, "../common")
 timeStamp()
 # import robot specific modules
 import config
+from comunication import *
 import servos
 import motor
 import ultra
 import headlights
 import findline
 import speech
+import sounds
 
 timeStamp()
 # import installed modules
@@ -456,7 +458,15 @@ def mainLoop(socket):
     
         if not command:
             continue
+
+        # strip end-of-cmd off
+        if END_OF_CMD in command:
+            command = command[:-len(END_OF_CMD)]
+        # TODO: add code to handle receiving multiple commands delimited by end-of-cmd
     
+        if PLAY_SOUND in command:
+            sounds.playSound(command[len(PLAY_SOUND):])
+
         elif 'exit' in command:
             os.system("sudo shutdown -h now\n")
 
@@ -671,15 +681,6 @@ if __name__ == '__main__':
     timeStamp()
     print("robot server starting...")
 
-    print("initializing mixer")
-    mixer.init()
-    print("loading sound file")
-    i_am_a_robot = mixer.Sound('sounds/i-am-a-robot.wav')
-    print("playing sound file")
-    i_am_a_robot.set_volume(.40)
-    i_am_a_robot.play()
-    timeStamp()
-    
     atexit.register(cleanup)
     
     # LED strip configuration:

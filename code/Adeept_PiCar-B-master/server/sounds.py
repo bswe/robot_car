@@ -12,18 +12,24 @@ import config
 from comunication import *
 import time
 import atexit
+import queue
+import threading
 from pygame import mixer
-from os import path
 
-channel = None
-sounds = None
-
+fifo = queue.Queue()
 
 def playSound(key):
-    global channel
-    while (channel != None) and (channel.get_busy()):
-        time.sleep(.1)
-    channel = sounds[key].play()
+    print("playSound: " + key)
+    fifo.put(key)
+
+
+def playSoundThread():
+    channel = None
+    while True:
+        while (channel != None) and (channel.get_busy()):
+            time.sleep(.1)
+        if not fifo.empty():
+            channel = sounds[fifo.get()].play()
 
 
 def cleanup():
@@ -74,6 +80,10 @@ r2d2.set_volume(.40)
 sounds[R2D2] = r2d2
 
 atexit.register(cleanup)
+
+t = threading.Thread(target = playSoundThread)   # Define a thread for playing sounds
+t.setDaemon(True)               # True means it is a front thread, closes when the mainloop() closes
+t.start()                                 
 
 
 if __name__ == '__main__':
