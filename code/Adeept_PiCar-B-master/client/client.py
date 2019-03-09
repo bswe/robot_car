@@ -10,6 +10,8 @@
 import sys
 sys.path.insert(0, "../common")
 import config
+sys.path.insert(0, "../server")
+from sounds import soundKeys, I_AM_A_ROBOT
 import socket 
 import sys,subprocess
 import time
@@ -21,8 +23,6 @@ import cv2
 import zmq
 import base64
 import numpy as np
-#from tkinter import font
-
 
 # constants
 BUFFER_SIZE      = 1024     
@@ -64,6 +64,8 @@ var_spd = None
 l_VIN = None
 BtnVIN = None
 Steering = None
+SteeringLeftMax = None
+SteeringRightMax = None
 
 led_status      = 0
 opencv_status   = 0
@@ -155,22 +157,30 @@ def receiveThread():     # Thread for receiving and processing data from server
         if 'SET' in str(code_car):
             set_list = code_car.decode()
             set_list = set_list.split()
-            s1, s2, s3, s4, s5, s6, s7 = set_list[1:]
+            s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11 = set_list[1:]
             headPitchHome.delete(0, 50)
-            headYawHome.delete(0, 50)
-            E_M1.delete(0, 50)
-            E_M2.delete(0, 50)
             headUpMax.delete(0, 50)
             headDownMax.delete(0, 50)
+            headYawHome.delete(0, 50)
+            headLeftMax.delete(0, 50)
+            headRightMax.delete(0, 50)
             SteeringCenter.delete(0, 50)
+            SteeringLeftMax.delete(0, 50)
+            SteeringRightMax.delete(0, 50)
+            E_M1.delete(0, 50)
+            E_M2.delete(0, 50)
 
             headPitchHome.insert (0, '%d'%int(s1) ) 
-            headYawHome.insert (0, '%d'%int(s2) ) 
-            E_M1.insert (0, '%d'%int(s3) ) 
-            E_M2.insert (0, '%d'%int(s4) )
-            headUpMax.insert (0, '%d'%int(s5) ) 
-            headDownMax.insert (0, '%d'%int(s6) )
+            headUpMax.insert (0, '%d'%int(s2) ) 
+            headDownMax.insert (0, '%d'%int(s3) )
+            headYawHome.insert (0, '%d'%int(s4) ) 
+            headLeftMax.insert (0, '%d'%int(s5) ) 
+            headRightMax.insert (0, '%d'%int(s6) )
             SteeringCenter.insert (0, '%d'%int(s7) )
+            SteeringLeftMax.insert (0, '%d'%int(s8) ) 
+            SteeringRightMax.insert (0, '%d'%int(s9) )
+            E_M1.insert (0, '%d'%int(s10) ) 
+            E_M2.insert (0, '%d'%int(s11) )
 
         elif 'list' in str(code_car):         # Scan result receiving start
             processList(code_car)
@@ -411,11 +421,11 @@ def sendHeadYawHome(event):
 
 
 def sendHeadLeftMax(event):            
-    tcpClicSock.send(('LUMset:%s'%headLeftMax.get()).encode())   
+    tcpClicSock.send(('LLMset:%s'%headLeftMax.get()).encode())   
 
 
 def sendHeadRightMax(event):            
-    tcpClicSock.send(('LDMset:%s'%headRightMax.get()).encode())   
+    tcpClicSock.send(('LRMset:%s'%headRightMax.get()).encode())   
 
 
 def sendEM1(event):            
@@ -428,6 +438,14 @@ def sendEM2(event):
 
 def sendSteeringCenter(event):            #Call this function for steering adjustment
     tcpClicSock.send(('STEERINGset:%s'%SteeringCenter.get()).encode())   
+
+
+def sendSteeringLeftMax(event):            
+    tcpClicSock.send(('SLMset:%s'%SteeringLeftMax.get()).encode())   
+
+
+def sendSteeringRightMax(event):            
+    tcpClicSock.send(('SRMset:%s'%SteeringRightMax.get()).encode())   
 
 
 def sendFindLine(event):            #Line follow mode
@@ -464,6 +482,10 @@ def sendAuto(event):            #When this function is called, client commands t
     else:
         tcpClicSock.send(('Stop').encode())
 
+
+def playSound(*args):
+    print(soundList.get() )
+ 
 
 def voice_input():
     r = sr.Recognizer()
@@ -526,8 +548,8 @@ def voiceCommand(event):
 
 def init():
     global ip_entry, labelSpeedStatus, labelConnectionStatus, labelIpAddress, BtnConnect, BtnFollow, BtnFL, BtnHeadlights, \
-           BtnOCV, var_x_scan, var_spd, SteeringCenter, BtnSR3, labelStatus, BtnIP, headPitchHome, headYawHome, E_M1, E_M2, \
-           headUpMax, headDownMax, headRightMax, headLeftMax, l_VIN, BtnVIN
+           BtnOCV, var_x_scan, var_spd, BtnSR3, labelStatus, BtnIP, headPitchHome, headYawHome, E_M1, E_M2, headUpMax, \
+           headDownMax, headRightMax, headLeftMax, l_VIN, BtnVIN, SteeringCenter, SteeringLeftMax, SteeringRightMax, soundList
 
     window.title('Adeept')              #Main window title
     window.geometry('917x630')          #Main window size, middle of the English letter x.
@@ -613,16 +635,16 @@ def init():
     SteeringCenter.place(x=785, y=yPos+27)                             #Define a Entry and put it in position
 
     yPos += 55
+    BtnSteeringLeftMax = tk.Button(window, width=BTN_WIDTH_2, text='Steering Left Max', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnSteeringLeftMax.place(x=785, y=yPos)
+    SteeringLeftMax = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
+    SteeringLeftMax.place(x=785, y=yPos+27)                             #Define a Entry and put it in position
+
+    yPos += 55
     BtnSteeringRightMax = tk.Button(window, width=BTN_WIDTH_2, text='Steering Right Max', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnSteeringRightMax.place(x=785, y=yPos)
     SteeringRightMax = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
     SteeringRightMax.place(x=785, y=yPos+27)                             #Define a Entry and put it in position
-
-    yPos += 55
-    BtnSteeringLefttMax = tk.Button(window, width=BTN_WIDTH_2, text='Steering Left Max', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    BtnSteeringLefttMax.place(x=785, y=yPos)
-    SteeringLeftMax = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
-    SteeringLeftMax.place(x=785, y=yPos+27)                             #Define a Entry and put it in position
 
     yPos += 55
     BtnM1 = tk.Button(window, width=BTN_WIDTH_2, text='Motor A Speed', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
@@ -776,8 +798,20 @@ def init():
     BtnScan = tk.Button(window, width=BTN_WIDTH_1, text='Scan', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnScan.place(x=350, y=330)
 
-    # Bind the buttons with the corresponding callback function
+    # Dictionary with sounds
+    #soundChoices = {'I am robot','R2D2','Pew','Bye Bye','Fire Truck'}
+    soundList = tk.StringVar(window)     
+    soundList.set(I_AM_A_ROBOT)                            # set the default option     
+    popupMenu = tk.OptionMenu(window, soundList, *soundKeys)
+    popupMenu.configure(fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    popupMenu.grid(row = 2, column = 1)
+    popupMenu.place(x=175, y=495)
+    l = tk.Label(window, text="Play Sound", fg=TEXT_COLOR, bg='#000000')
+    l.grid(row = 1, column = 1)
+    l.place(x=190, y=475)
+     
     # first bind for button pressing
+    soundList.trace('w', playSound)    
     BtnSteerRight.bind('<ButtonPress-1>', sendSteerRight)
     BtnSteerLeft.bind('<ButtonPress-1>', sendSteerLeft)
     BtnMiddle.bind('<ButtonPress-1>', sendMiddle)
@@ -802,6 +836,8 @@ def init():
     BtnHeadLeftMax.bind('<ButtonPress-1>', sendHeadLeftMax)
     BtnHeadRightMax.bind('<ButtonPress-1>', sendHeadRightMax)
     BtnSteeringCenter.bind('<ButtonPress-1>', sendSteeringCenter)
+    BtnSteeringLeftMax.bind('<ButtonPress-1>', sendSteeringLeftMax)
+    BtnSteeringRightMax.bind('<ButtonPress-1>', sendSteeringRightMax)
     BtnM1.bind('<ButtonPress-1>', sendEM1)
     BtnM2.bind('<ButtonPress-1>', sendEM2)
     BtnFL.bind('<ButtonPress-1>', sendFindLine)
