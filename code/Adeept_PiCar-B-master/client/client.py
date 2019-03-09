@@ -483,8 +483,10 @@ def sendAuto(event):            #When this function is called, client commands t
 
 
 def playSound(*args):
-    print(soundList.get() )
-    tcpClicSock.send((PLAY_SOUND + soundList.get() + END_OF_CMD).encode)   
+    print("playSound " + soundList.get())
+    s = PLAY_SOUND + soundList.get() + END_OF_CMD
+    print(s)
+    tcpClicSock.send((s).encode())   
  
 
 def voice_input():
@@ -802,7 +804,7 @@ def init():
     #soundChoices = {'I am robot','R2D2','Pew','Bye Bye','Fire Truck'}
     soundList = tk.StringVar(window)     
     soundList.set(I_AM_A_ROBOT)                            # set the default option     
-    popupMenu = tk.OptionMenu(window, soundList, *soundKeys)
+    popupMenu = tk.OptionMenu(window, soundList, *sorted(soundKeys))
     popupMenu.configure(fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     popupMenu.grid(row = 2, column = 1)
     popupMenu.place(x=175, y=495)
