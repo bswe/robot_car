@@ -10,8 +10,7 @@
 import sys
 sys.path.insert(0, "../common")
 import config
-sys.path.insert(0, "../server")
-from sounds import soundKeys, I_AM_A_ROBOT
+from comunication import *
 import socket 
 import sys,subprocess
 import time
