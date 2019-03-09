@@ -16,7 +16,8 @@ def exportConfig(ItemName, Value):   # Call this function to export item to 'con
         for line in f.readlines():
             if (line.find(ItemName) == 0):
                 # replace existing item value with new one
-                line = ItemName + str(Value)
+                line = ItemName + str(Value) + '\n'
+                found = True
             newlines += line
     if not found:
         return False
