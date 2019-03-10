@@ -563,6 +563,7 @@ def init():
         IP_ENTRY_WIDTH = 14
         BTN_WIDTH_1 = 5
         BTN_WIDTH_2 = 12
+        BTN_WIDTH_3 = 15
         INFO_WIDTH = 43
         INFO_X = 247
         IP_WIDTH = 15
@@ -579,6 +580,7 @@ def init():
         IP_ENTRY_WIDTH = 16
         BTN_WIDTH_1 = 8
         BTN_WIDTH_2 = 15
+        BTN_WIDTH_3 = 18
         INFO_WIDTH = 39
         INFO_X = 240
         IP_WIDTH = 18
@@ -679,7 +681,7 @@ def init():
     BtnFL.place(x=105, y=420)
 
     BtnSR3 = tk.Button(window, width=BTN_WIDTH_1, text='Sphinx SR', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge', command=sendSR3)
-    BtnSR3.place(x=300, y=495)
+    BtnSR3.place(x=330, y=495)
 
     can_scan = tk.Canvas(window, bg=CANVAS_COLOR, height=250, width=320, highlightthickness=0) #define a canvas
     can_scan.place(x=440, y=330) #Place the canvas
@@ -805,12 +807,10 @@ def init():
     soundList = tk.StringVar(window)     
     soundList.set(I_AM_A_ROBOT)                            # set the default option     
     popupMenu = tk.OptionMenu(window, soundList, *sorted(soundKeys))
-    popupMenu.configure(fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    popupMenu.grid(row = 2, column = 1)
-    popupMenu.place(x=175, y=495)
+    popupMenu.configure(fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge', width=BTN_WIDTH_3)
+    popupMenu.place(x=160, y=495)
     l = tk.Label(window, text="Play Sound", fg=TEXT_COLOR, bg='#000000')
-    l.grid(row = 1, column = 1)
-    l.place(x=190, y=475)
+    l.place(x=190, y=470)
      
     # first bind for button pressing
     soundList.trace('w', playSound)    
