@@ -12,9 +12,5 @@ datasheet/PCA9685.pdf
 
 code/Adeept_PiCar-B-master/server/config.pdf
 
-code/Adeept_PiCar-B-master/client/config.txt
 *.pyc
-
-
-
-code/Adeept_PiCar-B-master/client/config.txt
+*.txt
