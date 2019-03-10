@@ -40,7 +40,7 @@ def importConfig(ItemName):          # Call this function to import item from 'c
     lenItemName = len(ItemName)
     value = line[lenItemName:]
     #print(str(lenItemName) + " " + value)
-    return value
+    return value.strip()
 
 
 def importConfigInt(ItemName):
