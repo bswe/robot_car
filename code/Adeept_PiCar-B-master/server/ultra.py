@@ -43,12 +43,6 @@ def checkDistance():       # perform ultrasonic distance check
     return (echoStopTime - echoStartTime) * 170  # echo_delay_Time * 340/2   (speed of sound ~= 340 meters/second)
 
 
-def cleanup():
-    print("ultra module: executing cleanup()")
-    GPIO.setwarnings (False)
-    GPIO.cleanup()
-
-
 def loop(distance_stay, distance_range):   #Tracking with Ultrasonic
     servos.lookAhead()
     servos.steerMiddle()
@@ -79,4 +73,3 @@ def loop(distance_stay, distance_range):   #Tracking with Ultrasonic
 GPIO.setmode(GPIO.BOARD)
 GPIO.setup(Tr, GPIO.OUT, initial=GPIO.LOW)
 GPIO.setup(Ec, GPIO.IN)
-atexit.register(cleanup)

@@ -33,10 +33,6 @@ def playSoundThread():
             channel = sounds[fifo.get()].play()
 
 
-def cleanup():
-    print("sounds module: executing cleanup()")
-
-
 mixer.init()
 sounds = dict.fromkeys(soundKeys, None)
 
@@ -109,8 +105,6 @@ sounds[SMALL_DOG_BARKING] = small_dog_barking
 
 toilet_flush = mixer.Sound('sounds/toilet-flush.wav')
 sounds[TOILET_FLUSH] = toilet_flush
-
-atexit.register(cleanup)
 
 t = threading.Thread(target = playSoundThread)  # Define a thread for playing sounds
 t.setDaemon(True)                               # True means it is a front thread, closes when the mainloop() closes

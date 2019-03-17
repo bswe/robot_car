@@ -208,12 +208,6 @@ def police (police_time):
     turn (BOTH, OFF)
 
 
-def cleanup():
-    print("headlights module: executing cleanup()")
-    GPIO.setwarnings (False)
-    GPIO.cleanup()             # Release resource
-
-
 # initialization code, intentionally not in a method to encapsulate it within the module and to ensure its execution 
 GPIO.setwarnings (True)
 GPIO.setmode (GPIO.BOARD)
@@ -224,7 +218,6 @@ GPIO.setup (19, GPIO.OUT)   # RIGHT_R
 GPIO.setup (21, GPIO.OUT)   # RIGHT_G
 GPIO.setup (22, GPIO.OUT)   # RIGHT_B
 turn (BOTH, OFF)
-atexit.register(cleanup)
 
 
 if __name__ == '__main__':

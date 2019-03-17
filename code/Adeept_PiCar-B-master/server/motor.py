@@ -66,12 +66,6 @@ def motorA(direction, speed):   #Motor A positive and negative rotation
         pwm_A.ChangeDutyCycle(speed)
 
 
-def cleanup():
-    print("motor module: executing cleanup()")
-    GPIO.setwarnings (False)
-    GPIO.cleanup()             # Release resource
-
-
 # initialization code, intentionally not in a method to encapsulate it within the module and to ensure its execution 
 GPIO.setwarnings(True)
 GPIO.setmode(GPIO.BOARD)
@@ -82,12 +76,7 @@ GPIO.setup(MOTOR_A_PIN2, GPIO.OUT)
 GPIO.setup(MOTOR_B_PIN1, GPIO.OUT)
 GPIO.setup(MOTOR_B_PIN2, GPIO.OUT)
 try:
-    print("creating motor A PWM, pwm_A=%s" %str(pwm_A))
     pwm_A = GPIO.PWM(MOTOR_A_EN, 100)
-    print("creating motor B PWM, pwm_B=%s" %str(pwm_B))
     pwm_B = GPIO.PWM(MOTOR_B_EN, 100)
 except Exception as e:
     print(e)
-print("pwm_A=%s" %str(pwm_A))
-print("pwm_B=%s" %str(pwm_B))
-atexit.register(cleanup)
