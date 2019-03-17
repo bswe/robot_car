@@ -72,6 +72,8 @@ auto_status     = 0
 speech_status   = 0
 findline_status = 0
 
+keyCommandsEnabled = False
+
 
 def processList(code_car):
     dis_list = []
@@ -147,7 +149,7 @@ def receiveThread():     # Thread for receiving and processing data from server
             code_car = tcpClicSock.recv(BUFFER_SIZE) #Listening,and save the data in 'code_car'
         except Exception:
             print ("got socket exception in code _receive thread, will terminate thread")
-            exit()
+            return
         if not code_car:
             continue
         labelStatus.config(text=code_car)          #Put the data on the label
@@ -262,8 +264,7 @@ def fpvThread():       # thread that displays incoming fpv video
             frame = footage_socket.recv_string()
         except Exception:
             print ("got socket exception in fpvThread, will exit thread")
-            time.sleep(1)
-            sys.exit()
+            return
         img = base64.b64decode(frame)
         npimg = np.frombuffer(img, dtype=np.uint8)
         source = cv2.imdecode(npimg, 1)
@@ -482,12 +483,145 @@ def sendAuto(event):            #When this function is called, client commands t
         tcpClicSock.send(('Stop').encode())
 
 
+def sendVolumeIncrease():
+    print("sendVolumeIncrease ")
+    s = VOLUME + "+" + END_OF_CMD
+    print(s)
+    tcpClicSock.send((s).encode())   
+    
+
+def sendVolumeDecrease():
+    print("sendVolumeDecrease ")
+    s = VOLUME + "-" + END_OF_CMD
+    print(s)
+    tcpClicSock.send((s).encode())   
+
+
+def sendRateIncrease():
+    print("sendRateIncrease ")
+    s = RATE + "+" + END_OF_CMD
+    print(s)
+    tcpClicSock.send((s).encode())   
+    
+
+def sendRateDecrease():
+    print("sendRateDecrease ")
+    s = RATE + "-" + END_OF_CMD
+    print(s)
+    tcpClicSock.send((s).encode())   
+
+
+def sendNod():
+    print("sendNod ")
+    s = NOD + END_OF_CMD
+    print(s)
+    tcpClicSock.send((s).encode())
+    
+
+def sendShake():
+    print("sendShake ")
+    s = SHAKE + END_OF_CMD
+    print(s)
+    tcpClicSock.send((s).encode())
+
+
 def playSound(*args):
     print("playSound " + soundList.get())
-    s = PLAY_SOUND + soundList.get() + END_OF_CMD
+    s = SOUND + soundList.get() + END_OF_CMD
     print(s)
     tcpClicSock.send((s).encode())   
  
+
+def speakPhrase():
+    print("speakPhrase " + phrase_entry.get())
+    s = SPEAK + phrase_entry.get() + END_OF_CMD
+    print(s)
+    tcpClicSock.send((s).encode())
+
+
+def toggleKeyCommands(*args):
+    if keyCommandsEnabled:
+        disablekeyCommands()
+    else:
+        enablekeyCommands()
+    print("toggleKeyCommnds: " + str(keyCommandsEnabled))
+
+
+def phraseEntryHasFocus(*args):
+    print("phraseEntryHasFocus:")
+    disablekeyCommands()
+ 
+
+def enablekeyCommands():
+    # enable keyboard shortcut keys
+    global keyCommandsEnabled
+    keyCommandsEnabled = True
+    keyCommands.focus_set()      # ensure no entry widget continues to have focus
+    keyCommands.configure(bg='#50a050', activebackground='#50a050')    # turn button green
+    # Bind the keys with the corresponding callback function
+    window.bind('<KeyPress-w>', sendForward) 
+    window.bind('<KeyPress-a>', sendLeft)
+    window.bind('<KeyPress-d>', sendRight)
+    window.bind('<KeyPress-s>', sendBackward)
+    window.bind('<KeyPress-q>', sendSteerLeft)
+    window.bind('<KeyPress-e>', sendSteerRight)
+
+    # When these keys is released,call the function sendstop()
+    window.bind('<KeyRelease-w>', sendStop)
+    window.bind('<KeyRelease-a>', sendMiddle)
+    window.bind('<KeyRelease-d>', sendMiddle)
+    window.bind('<KeyRelease-s>', sendStop)
+    window.bind('<KeyRelease-h>', sendHeadlights)
+    window.bind('<KeyRelease-f>', sendFindLine)
+    window.bind('<KeyRelease-v>', voiceCommand)
+
+    # Press these keyss to call the corresponding function()
+    window.bind('<KeyPress-c>', sendOff)
+    window.bind('<KeyPress-z>', sendAuto) 
+    window.bind('<KeyPress-j>', sendLookLeft)
+    window.bind('<KeyPress-l>', sendLookRight)
+    window.bind('<KeyPress-k>', sendLookAhead)
+    window.bind('<KeyPress-m>', sendLookDown)
+    window.bind('<KeyPress-i>', sendLookUp)
+    window.bind('<KeyPress-x>', sendScan)
+    window.bind('<Return>', connect)
+    window.bind('<Shift-c>', sendStop)
+
+
+def disablekeyCommands():
+    # disable keyboard shortcut keys to allow keyboard to be used for entry widgets
+    global keyCommandsEnabled
+    keyCommandsEnabled = False
+    keyCommands.configure(bg='#505050', activebackground='#505050')    # gray out button
+    # Bind the keys with the corresponding callback function
+    window.unbind('<KeyPress-w>') 
+    window.unbind('<KeyPress-a>')
+    window.unbind('<KeyPress-d>')
+    window.unbind('<KeyPress-s>')
+    window.unbind('<KeyPress-q>')
+    window.unbind('<KeyPress-e>')
+
+    # When these keys is released,call the function sendstop()
+    window.unbind('<KeyRelease-w>')
+    window.unbind('<KeyRelease-a>')
+    window.unbind('<KeyRelease-d>')
+    window.unbind('<KeyRelease-s>')
+    window.unbind('<KeyRelease-h>')
+    window.unbind('<KeyRelease-f>')
+    window.unbind('<KeyRelease-v>')
+
+    # Press these keyss to call the corresponding function()
+    window.unbind('<KeyPress-c>')
+    window.unbind('<KeyPress-z>') 
+    window.unbind('<KeyPress-j>')
+    window.unbind('<KeyPress-l>')
+    window.unbind('<KeyPress-k>')
+    window.unbind('<KeyPress-m>')
+    window.unbind('<KeyPress-i>')
+    window.unbind('<KeyPress-x>')
+    window.unbind('<Return>')
+    window.unbind('<Shift-c>')
+
 
 def voice_input():
     r = sr.Recognizer()
@@ -551,7 +685,8 @@ def voiceCommand(event):
 def init():
     global ip_entry, labelSpeedStatus, labelConnectionStatus, labelIpAddress, BtnConnect, BtnFollow, BtnFL, BtnHeadlights, \
            BtnOCV, var_x_scan, var_spd, BtnSR3, labelStatus, BtnIP, headPitchHome, headYawHome, E_M1, E_M2, headUpMax, \
-           headDownMax, headRightMax, headLeftMax, l_VIN, BtnVIN, SteeringCenter, SteeringLeftMax, SteeringRightMax, soundList
+           headDownMax, headRightMax, headLeftMax, l_VIN, BtnVIN, SteeringCenter, SteeringLeftMax, SteeringRightMax, \
+           soundList, phrase_entry, keyCommands
 
     window.title('Adeept')              #Main window title
     window.geometry('917x630')          #Main window size, middle of the English letter x.
@@ -564,9 +699,10 @@ def init():
         BTN_WIDTH_1 = 5
         BTN_WIDTH_2 = 12
         BTN_WIDTH_3 = 15
-        INFO_WIDTH = 43
+        INFO_WIDTH = 40
         INFO_X = 247
         IP_WIDTH = 15
+        PHRASE_WIDTH = 50
         # reducing font size so widgets fit right on Raspbian
         #tf = font.nametofont("TkTextFont")      # used in entry widgets
         #tf.configure(size=8)
@@ -580,10 +716,11 @@ def init():
         IP_ENTRY_WIDTH = 16
         BTN_WIDTH_1 = 8
         BTN_WIDTH_2 = 15
-        BTN_WIDTH_3 = 18
+        BTN_WIDTH_3 = 15
         INFO_WIDTH = 39
         INFO_X = 240
         IP_WIDTH = 18
+        PHRASE_WIDTH = 60
         
     var_spd = tk.StringVar()  #Speed value saved in a StringVar
     var_spd.set(1)            #Set default speed, to change the default speed value in the car,you need to click button 'Set'
@@ -594,73 +731,73 @@ def init():
     logo =tk.PhotoImage(file = 'logo.png')         #Define the picture of logo,but only supports '.png' and '.gif'
     l_logo=tk.Label(window, image=logo, bg=BACKGROUND_COLOR) #Set a label to show the logo picture
     l_logo.photo = logo
-    l_logo.place(x=30,y=13)                        #Place the Label in a right position
+    l_logo.place(x=30,y=13)                        
 
     yPos = 10
     BtnHeadPitchHome = tk.Button(window, width=BTN_WIDTH_2, text='Head Pitch Home', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnHeadPitchHome.place(x=785,y=yPos)
     headPitchHome = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
-    headPitchHome.place(x=785,y=yPos+27)                             #Define a Entry and put it in position
+    headPitchHome.place(x=785,y=yPos+27)                             
 
     yPos += 55
     BtnHeadUpMax = tk.Button(window, width=BTN_WIDTH_2, text='Head Up Max', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnHeadUpMax.place(x=785, y=yPos)
     headUpMax  = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
-    headUpMax .place(x=785, y=yPos+27)                             #Define a Entry and put it in position
+    headUpMax .place(x=785, y=yPos+27)                             
 
     yPos += 55
     BtnHeadDownMax = tk.Button(window, width=BTN_WIDTH_2, text='Head Down Max', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnHeadDownMax.place(x=785, y=yPos)
     headDownMax = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
-    headDownMax.place(x=785, y=yPos+27)                             #Define a Entry and put it in position
+    headDownMax.place(x=785, y=yPos+27)                             
 
     yPos += 55
     BtnHeadYawHome = tk.Button(window, width=BTN_WIDTH_2, text='Head Yaw Home', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnHeadYawHome.place(x=785,y=yPos)
     headYawHome = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
-    headYawHome.place(x=785,y=yPos+27)                             #Define a Entry and put it in position
+    headYawHome.place(x=785,y=yPos+27)                             
 
     yPos += 55
     BtnHeadLeftMax = tk.Button(window, width=BTN_WIDTH_2, text='Head Left Max', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnHeadLeftMax.place(x=785,y=yPos)
     headLeftMax = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
-    headLeftMax.place(x=785,y=yPos+27)                             #Define a Entry and put it in position
+    headLeftMax.place(x=785,y=yPos+27)                             
 
     yPos += 55
     BtnHeadRightMax = tk.Button(window, width=BTN_WIDTH_2, text='Head Right Max', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnHeadRightMax.place(x=785,y=yPos)
     headRightMax = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
-    headRightMax.place(x=785,y=yPos+27)                             #Define a Entry and put it in position
+    headRightMax.place(x=785,y=yPos+27)                             
 
     yPos += 55
     BtnSteeringCenter = tk.Button(window, width=BTN_WIDTH_2, text='Steering Center', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnSteeringCenter.place(x=785, y=yPos)
     SteeringCenter = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
-    SteeringCenter.place(x=785, y=yPos+27)                             #Define a Entry and put it in position
+    SteeringCenter.place(x=785, y=yPos+27)                             
 
     yPos += 55
     BtnSteeringLeftMax = tk.Button(window, width=BTN_WIDTH_2, text='Steering Left Max', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnSteeringLeftMax.place(x=785, y=yPos)
     SteeringLeftMax = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
-    SteeringLeftMax.place(x=785, y=yPos+27)                             #Define a Entry and put it in position
+    SteeringLeftMax.place(x=785, y=yPos+27)                             
 
     yPos += 55
     BtnSteeringRightMax = tk.Button(window, width=BTN_WIDTH_2, text='Steering Right Max', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnSteeringRightMax.place(x=785, y=yPos)
     SteeringRightMax = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
-    SteeringRightMax.place(x=785, y=yPos+27)                             #Define a Entry and put it in position
+    SteeringRightMax.place(x=785, y=yPos+27)                             
 
     yPos += 55
     BtnM1 = tk.Button(window, width=BTN_WIDTH_2, text='Motor A Speed', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnM1.place(x=785,y=yPos)
     E_M1 = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1', exportselection=0, justify='center')
-    E_M1.place(x=785, y=yPos+27)                             #Define a Entry and put it in position
+    E_M1.place(x=785, y=yPos+27)                             
 
     yPos += 55
     BtnM2 = tk.Button(window, width=BTN_WIDTH_2, text='Motor B Speed', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnM2.place(x=785 ,y=yPos)
     E_M2 = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F",fg='#eceff1', exportselection=0, justify='center')
-    E_M2.place(x=785, y=yPos+27)                             #Define a Entry and put it in position
+    E_M2.place(x=785, y=yPos+27)                             
 
     headPitchHome.insert (0, 'Default:425') 
     headUpMax.insert (0, 'Default:662') 
@@ -674,6 +811,12 @@ def init():
     E_M1.insert (0, 'Default:100') 
     E_M2.insert (0, 'Default:100')
 
+    s1 = tk.Scale(window, label="               < SLOW  Speed Adjustment   FAST >",
+                  from_=0.9, to=1, orient=tk.HORIZONTAL, length=400,
+                  showvalue=0.01, tickinterval=0.01, resolution=0.01, variable=var_spd,
+                  fg=TEXT_COLOR, bg=BACKGROUND_COLOR, highlightthickness=0)
+    s1.place(x=200, y=100)          
+
     BtnOCV = tk.Button(window, width=BTN_WIDTH_1, text='OpenCV', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge', command=sendOpencv)
     BtnOCV.place(x=30, y=420)
 
@@ -684,7 +827,6 @@ def init():
     BtnSR3.place(x=330, y=495)
 
     can_scan = tk.Canvas(window, bg=CANVAS_COLOR, height=250, width=320, highlightthickness=0) #define a canvas
-    can_scan.place(x=440, y=330) #Place the canvas
     line = can_scan.create_line(0, 62, 320, 62, fill='darkgray')   #Draw a line on canvas
     line = can_scan.create_line(0, 124, 320, 124, fill='darkgray') #Draw a line on canvas
     line = can_scan.create_line(0, 186, 320, 186, fill='darkgray') #Draw a line on canvas
@@ -692,37 +834,33 @@ def init():
     line = can_scan.create_line(80, 0, 80, 250, fill='darkgray')   #Draw a line on canvas
     line = can_scan.create_line(240, 0, 240, 250, fill='darkgray') #Draw a line on canvas
     x_range = var_x_scan.get()
-    can_tex_11=can_scan.create_text((27, 178), text='%sm'%round((x_range/4),2), fill='#aeea00')     #Create a text on canvas
-    can_tex_12=can_scan.create_text((27,116), text='%sm'%round((x_range/2),2), fill='#aeea00')     #Create a text on canvas
-    can_tex_13=can_scan.create_text((27,54), text='%sm'%round((x_range*0.75),2), fill='#aeea00')  #Create a text on canvas
-
-    s1 = tk.Scale(window, label="               < SLOW  Speed Adjustment   FAST >",
-    from_=0.9, to=1, orient=tk.HORIZONTAL, length=400,
-    showvalue=0.01, tickinterval=0.01, resolution=0.01, variable=var_spd, fg=TEXT_COLOR, bg=BACKGROUND_COLOR, highlightthickness=0)
-    s1.place(x=200, y=100)          #Define a Scale and put it in position on linux platform
+    can_tex_11 = can_scan.create_text((27, 178), text='%sm'%round((x_range/4),2), fill='#aeea00')   
+    can_tex_12 = can_scan.create_text((27,116), text='%sm'%round((x_range/2),2), fill='#aeea00')    
+    can_tex_13 = can_scan.create_text((27,54), text='%sm'%round((x_range*0.75),2), fill='#aeea00')  
+    can_scan.place(x=440, y=330) 
 
     s3 = tk.Scale(window, label="< NEAR  Scan Range Adjustment(Meters) FAR >",
-    from_=1, to=5, orient=tk.HORIZONTAL, length=300,
-    showvalue=1, tickinterval=1, resolution=1, variable=var_x_scan, fg=TEXT_COLOR, bg=BACKGROUND_COLOR, highlightthickness=0)
-    s3.place(x=30, y=320)    
+                  from_=1, to=5, orient=tk.HORIZONTAL, length=300,
+                  showvalue=1, tickinterval=1, resolution=1, variable=var_x_scan,
+                  fg=TEXT_COLOR, bg=BACKGROUND_COLOR, highlightthickness=0)
+    s3.place(x=30, y=325)    
 
-    labelStatus=tk.Label(window, width=18, text='Status', fg=TEXT_COLOR, bg=BUTTON_COLOR)
-    labelStatus.place(x=30, y=110)                           #Define a Label and put it in position
+    BtnScan = tk.Button(window, width=BTN_WIDTH_1, text='Scan', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
+    BtnScan.place(x=350, y=330)
 
-    labelSpeedStatus=tk.Label(window, width=18, text='Speed:%s'%(var_spd.get()), fg=TEXT_COLOR, bg=BUTTON_COLOR)
-    labelSpeedStatus.place(x=30, y=145)                         #Define a Label and put it in position
+    labelStatus = tk.Label(window, width=18, text='Status', fg=TEXT_COLOR, bg=BUTTON_COLOR)
+    labelStatus.place(x=30, y=110)                           
 
-    label=tk.Label(window, width=10, text='IP Address:', fg=TEXT_COLOR, bg='#000000')
-    label.place(x=165, y=15)                         #Define a Label and put it in position
+    labelSpeedStatus = tk.Label(window, width=18, text='Speed:%s'%(var_spd.get()), fg=TEXT_COLOR, bg=BUTTON_COLOR)
+    labelSpeedStatus.place(x=30, y=145)                         
 
-    labelConnectionStatus=tk.Label(window, width=IP_WIDTH, text='Disconnected', fg=TEXT_COLOR, bg='#F44336')
-    labelConnectionStatus.place(x=637, y=110)                         #Define a Label and put it in position
+    labelConnectionStatus = tk.Label(window, width=IP_WIDTH, text='Disconnected', fg=TEXT_COLOR, bg='#F44336')
+    labelConnectionStatus.place(x=637, y=110)                         
 
-    labelIpAddress=tk.Label(window, width=IP_WIDTH, text='Use default IP', fg=TEXT_COLOR, bg=BUTTON_COLOR)
-    labelIpAddress.place(x=637, y=145)                         #Define a Label and put it in position
+    labelIpAddress = tk.Label(window, width=IP_WIDTH, text='Use default IP', fg=TEXT_COLOR, bg=BUTTON_COLOR)
+    labelIpAddress.place(x=637, y=145)                         
 
-    label=tk.Label(window,
-                   width=INFO_WIDTH, anchor=tk.W, justify=tk.LEFT, font='TkFixedFont',
+    keyCommands = tk.Button(window, width=INFO_WIDTH, anchor=tk.W, justify=tk.LEFT, font='TkFixedFont',
                    text='<-- CAR CONTROLS      HEAD CONTROLS -->\n' \
                         '     W - forward       I - up\n' \
                         '     S - backward      M - down\n' \
@@ -732,22 +870,57 @@ def init():
                         '     E - steer right   H - headlights\n' \
                         '     Z - auto on       F - find line\n' \
                         '     C - auto off      X - scan' ,
-                   fg='#212121', bg='#90a4ae')
-    label.place(x=INFO_X, y=173)                    #Define a Label and put it in position
+                   fg='#212121', bg='#505050', activebackground='#505050')
+    keyCommands.place(x=INFO_X, y=173)                    
+
+    label = tk.Label(window, width=10, text='IP Address:', fg=TEXT_COLOR, bg='#000000')
+    label.place(x=165, y=15)                         
 
     ip_entry = tk.Entry(window, show=None, width=IP_ENTRY_WIDTH, bg="#37474F", fg='#eceff1')
-    ip_entry.place(x=170, y=40)                             #Define a Entry and put it in position
+    ip_entry.place(x=170, y=40)                             
 
-    BtnConnect= tk.Button(window, width=8, text='Connect', fg=TEXT_COLOR, bg=BUTTON_COLOR, command=connect, relief='ridge')
-    BtnConnect.place(x=300, y=35)                          #Define a Button and put it in position
+    BtnConnect = tk.Button(window, width=8, text='Connect', fg=TEXT_COLOR, bg=BUTTON_COLOR, command=connect, relief='ridge')
+    BtnConnect.place(x=300, y=35)                          
+
+    BtnNod = tk.Button(window, text='Nod', fg=TEXT_COLOR, bg=BUTTON_COLOR, command=sendNod, relief='ridge')
+    BtnNod.place(x=30, y=530)                          
+
+    BtnShake = tk.Button(window, text='Shake', fg=TEXT_COLOR, bg=BUTTON_COLOR, command=sendShake, relief='ridge')
+    BtnShake.place(x=70, y=530)                          
+
+    label = tk.Label(window, width=15, text='Phrase to Speak:', fg=TEXT_COLOR, bg='#000000')
+    label.place(x=165, y=540)                         
+
+    phrase_entry = tk.Entry(window, show=None, width=PHRASE_WIDTH, bg="#37474F", fg='#eceff1')
+    phrase_entry.place(x=30, y=560)                             
+
+    BtnSpeak = tk.Button(window, width=8, text='Speak', fg=TEXT_COLOR, bg=BUTTON_COLOR, command=speakPhrase, relief='ridge')
+    BtnSpeak.place(x=180, y=585)                          
+
+    BtnVolumeDecrease = tk.Button(window, width=1, text='-', fg=TEXT_COLOR, bg=BUTTON_COLOR, command=sendVolumeDecrease, relief='ridge')
+    BtnVolumeDecrease.place(x=32, y=585)                          
+
+    label = tk.Label(window, text='Volume', fg=TEXT_COLOR, bg='#000000')
+    label.place(x=50, y=585)                         
+
+    BtnVolumeIncrease = tk.Button(window, width=1, text='+', fg=TEXT_COLOR, bg=BUTTON_COLOR, command=sendVolumeIncrease, relief='ridge')
+    BtnVolumeIncrease.place(x=100, y=585)                          
+
+    BtnRateDecrease = tk.Button(window, width=1, text='-', fg=TEXT_COLOR, bg=BUTTON_COLOR, command=sendRateDecrease, relief='ridge')
+    BtnRateDecrease.place(x=327, y=585)                          
+
+    label = tk.Label(window, text='Rate', fg=TEXT_COLOR, bg='#000000')
+    label.place(x=345, y=585)                         
+
+    BtnRateIncrease = tk.Button(window, width=1, text='+', fg=TEXT_COLOR, bg=BUTTON_COLOR, command=sendRateIncrease, relief='ridge')
+    BtnRateIncrease.place(x=375, y=585)                          
 
     BtnVIN = tk.Button(window, width=BTN_WIDTH_2, text='Voice Input', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnVIN.place(x=30, y=495)
 
-    l_VIN=tk.Label(window, width=16, text='Voice commands', fg=TEXT_COLOR, bg=BUTTON_COLOR)
+    l_VIN = tk.Label(window, width=16, text='Voice commands', fg=TEXT_COLOR, bg=BUTTON_COLOR)
     l_VIN.place(x=30, y=465)      
 
-    #Define buttons and put these in position
     BtnSteerRight = tk.Button(window, width=BTN_WIDTH_1, text='Right', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnSteerRight.place(x=170, y=195)
 
@@ -799,17 +972,16 @@ def init():
     BtnSet = tk.Button(window, width=BTN_WIDTH_1, text='Set', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnSet.place(x=535, y=107)
 
-    BtnScan = tk.Button(window, width=BTN_WIDTH_1, text='Scan', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
-    BtnScan.place(x=350, y=330)
-
     # Dictionary with sounds
     #soundChoices = {'I am robot','R2D2','Pew','Bye Bye','Fire Truck'}
     soundList = tk.StringVar(window)     
     soundList.set(I_AM_A_ROBOT)                            # set the default option     
     popupMenu = tk.OptionMenu(window, soundList, *sorted(soundKeys))
     popupMenu.configure(fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge', width=BTN_WIDTH_3)
+    popupMenu.grid(row = 2, column = 1)
     popupMenu.place(x=160, y=495)
     l = tk.Label(window, text="Play Sound", fg=TEXT_COLOR, bg='#000000')
+    l.grid(row = 1, column = 1)
     l.place(x=190, y=470)
      
     # first bind for button pressing
@@ -845,41 +1017,14 @@ def init():
     BtnFL.bind('<ButtonPress-1>', sendFindLine)
     BtnVIN.bind('<ButtonPress-1>', voiceCommand)
     BtnHeadlights.bind('<ButtonPress-1>', sendHeadlights)
+    keyCommands.bind('<ButtonPress-1>', toggleKeyCommands)
+    phrase_entry.bind('<FocusIn>', phraseEntryHasFocus)
 
     # bind for button release
     BtnForward.bind('<ButtonRelease-1>', sendStop)
     BtnBackward.bind('<ButtonRelease-1>', sendStop)
     BtnMaxLeft.bind('<ButtonRelease-1>', sendStop)
     BtnMaxRight.bind('<ButtonRelease-1>', sendStop)
-
-    # Bind the keys with the corresponding callback function
-    window.bind('<KeyPress-w>', sendForward) 
-    window.bind('<KeyPress-a>', sendLeft)
-    window.bind('<KeyPress-d>', sendRight)
-    window.bind('<KeyPress-s>', sendBackward)
-    window.bind('<KeyPress-q>', sendSteerLeft)
-    window.bind('<KeyPress-e>', sendSteerRight)
-
-    # When these keys is released,call the function sendstop()
-    window.bind('<KeyRelease-w>', sendStop)
-    window.bind('<KeyRelease-a>', sendMiddle)
-    window.bind('<KeyRelease-d>', sendMiddle)
-    window.bind('<KeyRelease-s>', sendStop)
-    window.bind('<KeyRelease-h>', sendHeadlights)
-    window.bind('<KeyRelease-f>', sendFindLine)
-    window.bind('<KeyRelease-v>', voiceCommand)
-
-    # Press these keyss to call the corresponding function()
-    window.bind('<KeyPress-c>', sendOff)
-    window.bind('<KeyPress-z>', sendAuto) 
-    window.bind('<KeyPress-j>', sendLookLeft)
-    window.bind('<KeyPress-l>', sendLookRight)
-    window.bind('<KeyPress-k>', sendLookAhead)
-    window.bind('<KeyPress-m>', sendLookDown)
-    window.bind('<KeyPress-i>', sendLookUp)
-    window.bind('<KeyPress-x>', sendScan)
-    window.bind('<Return>', connect)
-    window.bind('<Shift-c>', sendStop)
 
 
 # Main program body    
@@ -890,7 +1035,11 @@ if __name__ == '__main__':
     footage_socket.setsockopt_string(zmq.SUBSCRIBE, np.unicode(''))
 
     init()             # Load GUI
-    window.mainloop()  # Run the window event processing loop
+    try:
+        window.mainloop()  # Run the window event processing loop
+    except Exception as e:
+        print("caught exception in mainloop: " + str(e))
+    
 
     if tcpClicSock != None:
         #command the server to quit if it hasn't already been told to exit

@@ -57,5 +57,10 @@ soundKeys = {BYE_BYE,
              TOILET_FLUSH}
 
 # strings used to specify commands
-END_OF_CMD   = ";"
-PLAY_SOUND   = "PS:"
+END_OF_CMD = ";"
+SOUND      = "SOUND:"
+SPEAK      = "SPEAK:"
+VOLUME     = "VOLUME:"
+RATE       = "RATE:"
+NOD        = "NOD:"
+SHAKE      = "SHAKE:"

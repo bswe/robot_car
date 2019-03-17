@@ -30,6 +30,7 @@ import headlights
 import findline
 import speech
 import sounds
+import speak
 
 timeStamp()
 # import installed modules
@@ -48,6 +49,7 @@ import os
 import subprocess
 import atexit
 from pygame import mixer
+import RPi.GPIO as GPIO
 
 timeStamp()
 distance_stay  = 0.4
@@ -464,16 +466,17 @@ def mainLoop(socket):
             command = command[:-len(END_OF_CMD)]
         # TODO: add code to handle receiving multiple commands delimited by end-of-cmd
     
-        if PLAY_SOUND in command:
-            sounds.playSound(command[len(PLAY_SOUND):])
+        if SOUND in command:
+            sounds.playSound(command[len(SOUND):])
+
+        elif SPEAK in command:
+            speak.say(command[len(SPEAK):])
 
         elif 'exit' in command:
             os.system("sudo shutdown -h now\n")
 
         elif 'quit' in command:
             print('shutting down')
-            colorWipe(ledStrip, rpi_ws281x.Color(0,0,0))
-            headlights.turn(headlights.BOTH, headlights.OFF)
             return
 
         elif 'spdset' in command:
@@ -669,6 +672,12 @@ def mainLoop(socket):
 
 def cleanup():
     print("server module: executing cleanup()")
+    colorWipe(ledStrip, rpi_ws281x.Color(0,0,0))
+    print("1")
+    headlights.turn(headlights.BOTH, headlights.OFF)
+    print("2")
+    GPIO.cleanup()             
+    print("3")
     try:
         camera.close()
     except:
@@ -681,7 +690,7 @@ if __name__ == '__main__':
     timeStamp()
     print("robot server starting...")
 
-    atexit.register(cleanup)
+    #atexit.register(cleanup)
     
     # LED strip configuration:
     LED_COUNT      = 12      # Number of LED pixels.
@@ -715,21 +724,24 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--clear', action='store_true', help='clear the display on exit')
     args = parser.parse_args()
        
+    speak.say("Roby ready")
+
     try:
        clientSocket, clientIpAddress = connect()
     except KeyboardInterrupt:
         print("keyboard interrupt...")
-        cleanup()
-        exit()
+        clientSocket = None
+        #cleanup()
         
-    setup(clientSocket, clientIpAddress)
-    
-    try:
-        mainLoop(clientSocket)
-    except KeyboardInterrupt:
-        print("keyboard interrupt...")
-        if ap_status == 1:
-            os.system("sudo shutdown -h now\n")
-            time.sleep(5)
-        cleanup()
+    if clientSocket != None:
+        setup(clientSocket, clientIpAddress)
+        
+        try:
+            mainLoop(clientSocket)
+        except KeyboardInterrupt:
+            print("keyboard interrupt...")
+            if ap_status == 1:
+                os.system("sudo shutdown -h now\n")
+                time.sleep(5)
+    cleanup()
     print("robot server stopping...")
