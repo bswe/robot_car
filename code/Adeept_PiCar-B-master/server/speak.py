@@ -9,6 +9,22 @@ def say(phrase):
     engine.runAndWait()
 
 
+def changeVolume(change):
+    volume = engine.getProperty('volume')
+    if change == "+":
+        engine.setProperty('volume', volume+.1)
+    else:
+        engine.setProperty('volume', volume-.1)
+
+
+def changeRate(change):
+    rate = engine.getProperty('rate')
+    if change == "+":
+        engine.setProperty('rate', rate+20)
+    else:
+        engine.setProperty('rate', rate-20)
+
+
 engine = pyttsx3.init()
 engine.setProperty('voice', "english-us")
 engine.runAndWait()

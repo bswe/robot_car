@@ -472,6 +472,18 @@ def mainLoop(socket):
         elif SPEAK in command:
             speak.say(command[len(SPEAK):])
 
+        elif VOLUME in command:
+            speak.changeVolume(command[len(VOLUME):])
+
+        elif RATE in command:
+            speak.changeRate(command[len(RATE):])
+
+        elif SHAKE in command:
+            servos.shakeHead()
+
+        elif NOD in command:
+            servos.nodHead()
+
         elif 'exit' in command:
             os.system("sudo shutdown -h now\n")
 
@@ -673,11 +685,8 @@ def mainLoop(socket):
 def cleanup():
     print("server module: executing cleanup()")
     colorWipe(ledStrip, rpi_ws281x.Color(0,0,0))
-    print("1")
     headlights.turn(headlights.BOTH, headlights.OFF)
-    print("2")
     GPIO.cleanup()             
-    print("3")
     try:
         camera.close()
     except:

@@ -703,6 +703,11 @@ def init():
         INFO_X = 247
         IP_WIDTH = 15
         PHRASE_WIDTH = 50
+        SHAKE_X = 85
+        RATE_INCREASE_X = 400
+        RATE_X = 365
+        VOLUME_INCREASE_X = 125
+        VOLUME_X = 70
         # reducing font size so widgets fit right on Raspbian
         #tf = font.nametofont("TkTextFont")      # used in entry widgets
         #tf.configure(size=8)
@@ -721,6 +726,11 @@ def init():
         INFO_X = 240
         IP_WIDTH = 18
         PHRASE_WIDTH = 60
+        SHAKE_X = 70
+        RATE_INCREASE_X = 375
+        RATE_X = 345
+        VOLUME_INCREASE_X = 100
+        VOLUME_X = 50
         
     var_spd = tk.StringVar()  #Speed value saved in a StringVar
     var_spd.set(1)            #Set default speed, to change the default speed value in the car,you need to click button 'Set'
@@ -886,7 +896,7 @@ def init():
     BtnNod.place(x=30, y=530)                          
 
     BtnShake = tk.Button(window, text='Shake', fg=TEXT_COLOR, bg=BUTTON_COLOR, command=sendShake, relief='ridge')
-    BtnShake.place(x=70, y=530)                          
+    BtnShake.place(x=SHAKE_X, y=530)                          
 
     label = tk.Label(window, width=15, text='Phrase to Speak:', fg=TEXT_COLOR, bg='#000000')
     label.place(x=165, y=540)                         
@@ -901,19 +911,19 @@ def init():
     BtnVolumeDecrease.place(x=32, y=585)                          
 
     label = tk.Label(window, text='Volume', fg=TEXT_COLOR, bg='#000000')
-    label.place(x=50, y=585)                         
+    label.place(x=VOLUME_X, y=585)                         
 
     BtnVolumeIncrease = tk.Button(window, width=1, text='+', fg=TEXT_COLOR, bg=BUTTON_COLOR, command=sendVolumeIncrease, relief='ridge')
-    BtnVolumeIncrease.place(x=100, y=585)                          
+    BtnVolumeIncrease.place(x=VOLUME_INCREASE_X, y=585)                          
 
     BtnRateDecrease = tk.Button(window, width=1, text='-', fg=TEXT_COLOR, bg=BUTTON_COLOR, command=sendRateDecrease, relief='ridge')
     BtnRateDecrease.place(x=327, y=585)                          
 
     label = tk.Label(window, text='Rate', fg=TEXT_COLOR, bg='#000000')
-    label.place(x=345, y=585)                         
+    label.place(x=RATE_X, y=585)                         
 
     BtnRateIncrease = tk.Button(window, width=1, text='+', fg=TEXT_COLOR, bg=BUTTON_COLOR, command=sendRateIncrease, relief='ridge')
-    BtnRateIncrease.place(x=375, y=585)                          
+    BtnRateIncrease.place(x=RATE_INCREASE_X, y=585)                          
 
     BtnVIN = tk.Button(window, width=BTN_WIDTH_2, text='Voice Input', fg=TEXT_COLOR, bg=BUTTON_COLOR, relief='ridge')
     BtnVIN.place(x=30, y=495)

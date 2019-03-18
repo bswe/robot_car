@@ -114,6 +114,60 @@ def lookAhead():
 	headYaw(HEAD_YAW_MIDDLE)
 
 
+def nodHead():    
+    HALF_RANGE = 5
+    RATE = .2
+
+    savePitchPosition = pitchPosition
+    downPosition = pitchPosition - SERVO_STEP*HALF_RANGE
+    upPosition = pitchPosition + SERVO_STEP*HALF_RANGE
+    if downPosition < HEAD_PITCH_DOWN_MAX:
+        adj = HEAD_PITCH_DOWN_MAX - downPosition
+        downPosition += adj
+        upPosition += adj
+        positions = [upPosition, downPosition, upPosition, downPosition, upPosition, downPosition]
+    elif upPosition > HEAD_PITCH_UP_MAX:
+        adj = upPosition - HEAD_PITCH_UP_MAX
+        downPosition -= adj
+        upPosition -= adj
+        positions = [downPosition, upPosition, downPosition, upPosition, downPosition, upPosition]
+    else:
+        positions = [downPosition, upPosition, downPosition, upPosition, downPosition, upPosition]
+
+    for p in positions:
+        headPitch(p)
+        time.sleep(RATE)
+ 
+    headPitch(savePitchPosition)    
+
+
+def shakeHead():    
+    HALF_RANGE = 5
+    RATE = .2
+
+    saveYawPosition = yawPosition
+    rightPosition = yawPosition - SERVO_STEP*HALF_RANGE
+    leftPosition = yawPosition + SERVO_STEP*HALF_RANGE
+    if rightPosition < HEAD_YAW_RIGHT_MAX:
+        adj = HEAD_YAW_RIGHT_MAX - rightPosition
+        rightPosition += adj
+        leftPosition += adj
+        positions = [leftPosition, rightPosition, leftPosition, rightPosition, leftPosition, rightPosition]
+    elif leftPosition > HEAD_YAW_LEFT_MAX:
+        adj = leftPosition - HEAD_YAW_LEFT_MAX
+        rightPosition -= adj
+        leftPosition -= adj
+        positions = [rightPosition, leftPosition, rightPosition, leftPosition, rightPosition, leftPosition]
+    else:
+        positions = [leftPosition, rightPosition, leftPosition, rightPosition, leftPosition, rightPosition]
+
+    for p in positions:
+        headYaw(p)
+        time.sleep(RATE)
+ 
+    headYaw(saveYawPosition)    
+
+
 def scan():                  # Ultrasonic Scanning
     headPitch(HEAD_PITCH_MIDDLE)
     direction = HEAD_YAW_LEFT_MAX           # Value of left-position
@@ -135,3 +189,35 @@ pwm = Adafruit_PCA9685.PCA9685()
 pwm.set_pwm_freq(60)
 lookAhead()        # call lookAhead() to center head and init position variables
 steerMiddle()      # call steerMiddle() to center steering and init heading variable
+
+
+if __name__ == '__main__':
+    time.sleep(2)
+    nodHead()
+    time.sleep(2)
+    headPitch(HEAD_PITCH_DOWN_MAX)
+    time.sleep(1)
+    nodHead()
+    time.sleep(2)
+    headPitch(HEAD_PITCH_UP_MAX)
+    time.sleep(1)
+    nodHead()
+    time.sleep(2)
+    """
+    time.sleep(2)
+    shakeHead()
+    time.sleep(2)
+    headYaw(HEAD_YAW_RIGHT_MAX)
+    time.sleep(1)
+    shakeHead()
+    time.sleep(2)
+    headYaw(HEAD_YAW_LEFT_MAX)
+    time.sleep(1)
+    shakeHead()
+    time.sleep(2)
+    """
+    lookAhead()
+    import RPi.GPIO as GPIO
+    GPIO.cleanup()             
+
+

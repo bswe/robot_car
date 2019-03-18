@@ -5,9 +5,9 @@ yaw_middle:350
 look_right_max:120
 look_left_max:600
 turn_middle:400
-turn_right_max:230
-turn_left_max:570
-servo_step:13
+turn_right_max:300
+turn_left_max:500
+servo_step:12
 E_M1:100
 E_M2:100
 ip_con:192.168.12.1
